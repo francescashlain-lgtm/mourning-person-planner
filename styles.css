@@ -16,7 +16,7 @@
   --border: rgba(76, 0, 4, 0.18);
   --border-light: rgba(76, 0, 4, 0.1);
 
-  --font-display: 'Playfair Display', Georgia, serif;
+  --font-display: 'Syne', -apple-system, sans-serif;
   --font-body: 'Inter', -apple-system, sans-serif;
 
   --shadow-sm: 0 1px 4px rgba(76, 0, 4, 0.1);
