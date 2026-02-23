@@ -1,0 +1,415 @@
+import {
+  signInWithGoogle,
+  signOutUser,
+  setAuthStateCallback,
+  saveToCloud
+} from './firebase-config.js';
+
+// ── State ──
+let ideas = [];
+let trendingNotes = '';
+let promoteNotes = '';
+let calendarDate = new Date(); // month currently shown
+
+// ── Cloud sync ──
+let saveTimer = null;
+
+function scheduleCloudSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveToCloud({ ideas, trendingNotes, promoteNotes });
+  }, 1200);
+}
+
+window.onCloudDataReceived = function(data) {
+  if (data.ideas) ideas = data.ideas;
+  if (data.trendingNotes !== undefined) trendingNotes = data.trendingNotes;
+  if (data.promoteNotes !== undefined) promoteNotes = data.promoteNotes;
+  renderAll();
+};
+
+// ── Auth ──
+document.getElementById('login-btn').addEventListener('click', async () => {
+  try { await signInWithGoogle(); } catch (e) { console.error(e); }
+});
+
+document.getElementById('sign-out-btn').addEventListener('click', async () => {
+  await signOutUser();
+  document.getElementById('app-content').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+});
+
+setAuthStateCallback((user) => {
+  if (user) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
+    const avatar = document.getElementById('user-avatar');
+    if (user.photoURL) avatar.src = user.photoURL;
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-content').style.display = 'none';
+  }
+});
+
+// ── Navigation ──
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`${tab}-tab`).classList.add('active');
+    if (tab === 'calendar') renderCalendar();
+  });
+});
+
+// ── Ideas ──
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function renderIdeas() {
+  const grid = document.getElementById('ideas-grid');
+  const statusFilter = document.getElementById('status-filter').value;
+  const themeFilter = document.getElementById('theme-filter').value;
+  const search = document.getElementById('search-ideas').value.toLowerCase();
+
+  let filtered = [...ideas];
+  if (statusFilter !== 'all') filtered = filtered.filter(i => i.status === statusFilter);
+  if (themeFilter !== 'all') filtered = filtered.filter(i => (i.themes || []).includes(themeFilter));
+  if (search) filtered = filtered.filter(i =>
+    i.title.toLowerCase().includes(search) ||
+    (i.notes || '').toLowerCase().includes(search)
+  );
+
+  // Sort: upcoming scheduled first, then by created desc
+  filtered.sort((a, b) => {
+    if (a.publishDate && b.publishDate) return a.publishDate.localeCompare(b.publishDate);
+    if (a.publishDate) return -1;
+    if (b.publishDate) return 1;
+    return b.createdAt - a.createdAt;
+  });
+
+  // Update counts
+  const counts = { idea: 0, drafting: 0, ready: 0, published: 0 };
+  ideas.forEach(i => { if (counts[i.status] !== undefined) counts[i.status]++; });
+  document.getElementById('count-idea').textContent = `${counts.idea} idea${counts.idea !== 1 ? 's' : ''}`;
+  document.getElementById('count-drafting').textContent = `${counts.drafting} drafting`;
+  document.getElementById('count-ready').textContent = `${counts.ready} ready`;
+  document.getElementById('count-published').textContent = `${counts.published} published`;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="ideas-empty">
+        <h3>No ideas yet</h3>
+        <p>Hit "+ New Idea" to start brainstorming.</p>
+      </div>`;
+    return;
+  }
+
+  const statusLabel = { idea: '💡 Idea', drafting: '✍️ Drafting', ready: '✅ Ready', published: '📬 Published' };
+
+  grid.innerHTML = filtered.map(idea => {
+    const themes = (idea.themes || []).map(t => `<span class="idea-theme-tag">${t}</span>`).join('');
+    const date = idea.publishDate ? `📅 ${formatDate(idea.publishDate)}` : '';
+    const notes = idea.notes ? `<div class="idea-card-notes">${escapeHtml(idea.notes)}</div>` : '';
+    return `
+    <div class="idea-card" data-id="${idea.id}">
+      <div class="idea-card-top">
+        <div class="idea-status-badge badge-${idea.status}">${statusLabel[idea.status]}</div>
+      </div>
+      <div class="idea-card-title">${escapeHtml(idea.title)}</div>
+      ${themes ? `<div class="idea-card-themes">${themes}</div>` : ''}
+      ${notes}
+      ${date ? `<div class="idea-card-meta">${date}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.idea-card').forEach(card => {
+    card.addEventListener('click', () => openIdeaModal(card.dataset.id));
+  });
+}
+
+function renderAll() {
+  renderIdeas();
+  renderCalendar();
+  document.getElementById('trending-notes').value = trendingNotes;
+  document.getElementById('promote-notes').value = promoteNotes;
+}
+
+// ── Idea Modal ──
+let editingIdeaId = null;
+
+document.getElementById('new-idea-btn').addEventListener('click', () => openIdeaModal(null));
+
+function openIdeaModal(id) {
+  editingIdeaId = id;
+  const idea = id ? ideas.find(i => i.id === id) : null;
+  const modal = document.getElementById('idea-modal');
+
+  document.getElementById('modal-title').value = idea ? idea.title : '';
+  document.getElementById('modal-status').value = idea ? idea.status : 'idea';
+  document.getElementById('modal-date').value = idea ? (idea.publishDate || '') : '';
+  document.getElementById('modal-notes').value = idea ? (idea.notes || '') : '';
+  document.getElementById('modal-link').value = idea ? (idea.link || '') : '';
+
+  // Theme checkboxes
+  const themes = idea ? (idea.themes || []) : [];
+  document.querySelectorAll('#theme-checkboxes input').forEach(cb => {
+    cb.checked = themes.includes(cb.value);
+  });
+
+  document.getElementById('modal-delete-btn').style.display = id ? 'inline-flex' : 'none';
+  document.getElementById('modal-save-btn').textContent = id ? 'Save Changes' : 'Save Idea';
+
+  modal.classList.add('active');
+  setTimeout(() => document.getElementById('modal-title').focus(), 50);
+}
+
+function closeIdeaModal() {
+  document.getElementById('idea-modal').classList.remove('active');
+  editingIdeaId = null;
+}
+
+document.getElementById('modal-close-btn').addEventListener('click', closeIdeaModal);
+document.getElementById('modal-cancel-btn').addEventListener('click', closeIdeaModal);
+document.getElementById('idea-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'idea-modal') closeIdeaModal();
+});
+
+document.getElementById('modal-save-btn').addEventListener('click', () => {
+  const title = document.getElementById('modal-title').value.trim();
+  if (!title) { document.getElementById('modal-title').focus(); return; }
+
+  const themes = [...document.querySelectorAll('#theme-checkboxes input:checked')].map(cb => cb.value);
+
+  const data = {
+    title,
+    status: document.getElementById('modal-status').value,
+    publishDate: document.getElementById('modal-date').value,
+    themes,
+    notes: document.getElementById('modal-notes').value.trim(),
+    link: document.getElementById('modal-link').value.trim(),
+  };
+
+  if (editingIdeaId) {
+    const idx = ideas.findIndex(i => i.id === editingIdeaId);
+    if (idx > -1) ideas[idx] = { ...ideas[idx], ...data, updatedAt: Date.now() };
+  } else {
+    ideas.unshift({ id: generateId(), ...data, createdAt: Date.now() });
+  }
+
+  scheduleCloudSave();
+  renderIdeas();
+  renderCalendar();
+  closeIdeaModal();
+});
+
+document.getElementById('modal-delete-btn').addEventListener('click', () => {
+  if (!editingIdeaId) return;
+  if (!confirm('Delete this idea?')) return;
+  ideas = ideas.filter(i => i.id !== editingIdeaId);
+  scheduleCloudSave();
+  renderIdeas();
+  renderCalendar();
+  closeIdeaModal();
+});
+
+// ── Filters ──
+document.getElementById('status-filter').addEventListener('change', renderIdeas);
+document.getElementById('theme-filter').addEventListener('change', renderIdeas);
+document.getElementById('search-ideas').addEventListener('input', renderIdeas);
+
+// ── Calendar ──
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function renderCalendar() {
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+  document.getElementById('cal-month-title').textContent = `${MONTHS[month]} ${year}`;
+
+  const grid = document.getElementById('calendar-grid');
+  const today = new Date();
+
+  // Day headers
+  let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+  // First day of month, last day
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev = new Date(year, month, 0).getDate();
+
+  // Prev month overflow
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const d = daysInPrev - i;
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+    const dayIdeas = ideas.filter(i => i.publishDate === dateStr);
+    const events = dayIdeas.map(i =>
+      `<div class="cal-event status-${i.status}" data-id="${i.id}">${escapeHtml(i.title)}</div>`
+    ).join('');
+    html += `
+      <div class="cal-day${isToday ? ' today' : ''}" data-date="${dateStr}">
+        <div class="cal-day-num">${d}</div>
+        ${events}
+      </div>`;
+  }
+
+  // Next month fill
+  const totalCells = firstDay + daysInMonth;
+  const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let d = 1; d <= remaining; d++) {
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+
+  grid.innerHTML = html;
+
+  // Click on a day to assign
+  grid.querySelectorAll('.cal-day:not(.other-month)').forEach(day => {
+    day.addEventListener('click', (e) => {
+      // If clicking an event chip, open that idea instead
+      const eventEl = e.target.closest('.cal-event');
+      if (eventEl) {
+        openIdeaModal(eventEl.dataset.id);
+        return;
+      }
+      openCalModal(day.dataset.date);
+    });
+  });
+
+  // Upcoming list
+  renderUpcoming();
+}
+
+function renderUpcoming() {
+  const list = document.getElementById('cal-upcoming-list');
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = ideas
+    .filter(i => i.publishDate && i.publishDate >= today)
+    .sort((a, b) => a.publishDate.localeCompare(b.publishDate))
+    .slice(0, 8);
+
+  if (upcoming.length === 0) {
+    list.innerHTML = `<p class="upcoming-empty">No upcoming scheduled posts. Assign dates to your ideas in the calendar.</p>`;
+    return;
+  }
+
+  list.innerHTML = upcoming.map(i => `
+    <div class="upcoming-item" data-id="${i.id}">
+      <div class="upcoming-date">${formatDate(i.publishDate)}</div>
+      <div class="upcoming-title">${escapeHtml(i.title)}</div>
+      <div class="idea-status-badge badge-${i.status}" style="font-size:0.6rem">${i.status}</div>
+    </div>`
+  ).join('');
+
+  list.querySelectorAll('.upcoming-item').forEach(item => {
+    item.addEventListener('click', () => openIdeaModal(item.dataset.id));
+  });
+}
+
+// Calendar nav
+document.getElementById('cal-prev').addEventListener('click', () => {
+  calendarDate.setMonth(calendarDate.getMonth() - 1);
+  renderCalendar();
+});
+document.getElementById('cal-next').addEventListener('click', () => {
+  calendarDate.setMonth(calendarDate.getMonth() + 1);
+  renderCalendar();
+});
+document.getElementById('cal-today-btn').addEventListener('click', () => {
+  calendarDate = new Date();
+  renderCalendar();
+});
+
+// Calendar assign modal
+let calModalDate = null;
+
+function openCalModal(dateStr) {
+  calModalDate = dateStr;
+  document.getElementById('cal-modal-date-title').textContent = formatDate(dateStr);
+
+  const select = document.getElementById('cal-modal-idea-select');
+  const unscheduled = ideas.filter(i => !i.publishDate || i.publishDate === dateStr);
+
+  select.innerHTML = `<option value="">— choose an idea —</option>` +
+    unscheduled.map(i => `<option value="${i.id}" ${i.publishDate === dateStr ? 'selected' : ''}>${escapeHtml(i.title)}</option>`).join('') +
+    (unscheduled.length === 0 ? `<option disabled>All ideas are already scheduled</option>` : '');
+
+  document.getElementById('cal-modal').classList.add('active');
+}
+
+function closeCalModal() {
+  document.getElementById('cal-modal').classList.remove('active');
+  calModalDate = null;
+}
+
+document.getElementById('cal-modal-close').addEventListener('click', closeCalModal);
+document.getElementById('cal-modal-cancel').addEventListener('click', closeCalModal);
+document.getElementById('cal-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'cal-modal') closeCalModal();
+});
+
+document.getElementById('cal-modal-assign').addEventListener('click', () => {
+  const selectedId = document.getElementById('cal-modal-idea-select').value;
+  if (!selectedId) { closeCalModal(); return; }
+  const idx = ideas.findIndex(i => i.id === selectedId);
+  if (idx > -1) {
+    ideas[idx].publishDate = calModalDate;
+    scheduleCloudSave();
+    renderCalendar();
+    renderIdeas();
+  }
+  closeCalModal();
+});
+
+// ── Trending & Promote notes ──
+let trendingTimer = null;
+document.getElementById('trending-notes').addEventListener('input', (e) => {
+  trendingNotes = e.target.value;
+  clearTimeout(trendingTimer);
+  trendingTimer = setTimeout(() => {
+    saveToCloud({ ideas, trendingNotes, promoteNotes });
+    showSaved('trending-saved');
+  }, 1500);
+});
+
+let promoteTimer = null;
+document.getElementById('promote-notes').addEventListener('input', (e) => {
+  promoteNotes = e.target.value;
+  clearTimeout(promoteTimer);
+  promoteTimer = setTimeout(() => {
+    saveToCloud({ ideas, trendingNotes, promoteNotes });
+    showSaved('promote-saved');
+  }, 1500);
+});
+
+function showSaved(id) {
+  const el = document.getElementById(id);
+  el.textContent = 'Saved';
+  setTimeout(() => { el.textContent = ''; }, 2000);
+}
+
+// ── Helpers ──
+function formatDate(str) {
+  if (!str) return '';
+  const [y, m, d] = str.split('-');
+  const date = new Date(Number(y), Number(m) - 1, Number(d));
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Init ──
+renderAll();
