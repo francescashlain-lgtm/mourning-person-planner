@@ -215,18 +215,7 @@ body {
 
 /* ── TAB HEADER ── */
 .tab-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
   margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.tab-header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
 }
 
 .tab-header h2 {
@@ -235,6 +224,33 @@ body {
   font-weight: 700;
   color: var(--maroon);
   line-height: 1;
+  text-align: left;
+}
+
+/* Ideas tab header */
+.ideas-tab-header { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.ideas-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ideas-header-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Calendar / other tab headers */
+.tab-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 /* ── BUTTONS ── */
@@ -307,10 +323,10 @@ body {
   border: 1.5px solid;
 }
 
-.chip-idea { background: #fffbea; color: #7a6200; border-color: #d4a700; }
-.chip-drafting { background: #eef0ff; color: #3a3fa0; border-color: #7b82e0; }
-.chip-ready { background: #eafaf1; color: #1a6b3c; border-color: #52c27a; }
-.chip-published { background: var(--maroon-pale); color: var(--maroon); border-color: var(--maroon-light); }
+.chip-idea    { background: var(--gold-wash); color: var(--gold-dark); border-color: var(--gold); }
+.chip-drafting { background: var(--gold-pale); color: var(--maroon); border-color: var(--gold-light); }
+.chip-ready   { background: var(--maroon-pale); color: var(--maroon); border-color: var(--maroon-light); }
+.chip-published { background: var(--maroon); color: var(--white); border-color: var(--maroon); }
 
 /* ── FILTERS ── */
 .filters-row {
@@ -338,110 +354,113 @@ body {
 
 .filter-search { flex: 1; min-width: 160px; }
 
-/* ── IDEAS GRID ── */
-.ideas-grid {
+/* ── KANBAN ── */
+.kanban-board {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
+  align-items: start;
+}
+
+.kanban-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 200px;
+}
+
+.kanban-col-header {
+  background: var(--maroon);
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.kanban-col-body {
+  background: rgba(250, 248, 240, 0.5);
+  border: 1.5px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  padding: 0.6rem;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: background var(--transition);
+}
+
+.kanban-col-body.drag-over {
+  background: var(--gold-wash);
+  border-color: var(--gold);
+}
+
+.kanban-empty {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  font-style: italic;
+  opacity: 0.7;
 }
 
 .idea-card {
   background: var(--cream);
   border: 1.5px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 1.1rem 1.2rem;
-  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.85rem;
+  cursor: grab;
   transition: var(--transition);
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  user-select: none;
 }
 
 .idea-card:hover {
   border-color: var(--maroon);
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
 }
 
-.idea-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
+.idea-card.dragging {
+  opacity: 0.4;
+  cursor: grabbing;
 }
 
-.idea-status-badge {
-  font-size: 0.65rem;
+.idea-card-type {
+  font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.18rem 0.55rem;
-  border-radius: var(--radius-full);
-  white-space: nowrap;
-  flex-shrink: 0;
+  letter-spacing: 0.07em;
+  color: var(--ink-muted);
 }
-
-.badge-idea { background: #fffbea; color: #7a6200; border: 1px solid #d4a700; }
-.badge-drafting { background: #eef0ff; color: #3a3fa0; border: 1px solid #7b82e0; }
-.badge-ready { background: #eafaf1; color: #1a6b3c; border: 1px solid #52c27a; }
-.badge-published { background: var(--maroon-pale); color: var(--maroon); border: 1px solid var(--maroon-light); }
 
 .idea-card-title {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: var(--ink);
   line-height: 1.35;
 }
 
-.idea-card-themes {
-  display: flex;
-  gap: 0.3rem;
-  flex-wrap: wrap;
-}
-
-.idea-theme-tag {
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-  background: rgba(175, 162, 49, 0.18);
-  border-radius: var(--radius-full);
-  padding: 0.15rem 0.5rem;
-}
-
 .idea-card-meta {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--ink-muted);
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
 }
 
 .idea-card-notes {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--ink-muted);
   line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.ideas-empty {
-  grid-column: 1/-1;
-  text-align: center;
-  padding: 4rem 2rem;
-  color: var(--ink-muted);
-}
-
-.ideas-empty h3 {
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  margin-bottom: 0.5rem;
-  color: var(--maroon);
 }
 
 /* ── CALENDAR ── */
@@ -458,11 +477,7 @@ body {
 
 .cal-nav-btn:hover { color: var(--maroon-light); }
 
-.tab-header-left {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+/* Calendar tab header uses tab-header-row */
 
 .calendar-grid {
   display: grid;
@@ -898,28 +913,6 @@ body {
 
 .modal-select:focus, .modal-input:focus { border-color: var(--maroon); }
 
-.theme-checkboxes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.theme-check {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  background: var(--white);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-full);
-  padding: 0.3rem 0.7rem;
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.theme-check:hover { border-color: var(--maroon); }
-
-.theme-check input { accent-color: var(--maroon); }
 
 .modal-textarea {
   background: var(--white);
@@ -970,7 +963,8 @@ body {
 
   .tab-header h2 { font-size: 1.6rem; }
 
-  .ideas-grid { grid-template-columns: 1fr; }
+  .kanban-board { grid-template-columns: 1fr 1fr; }
+  .ideas-header-bottom { flex-direction: column; align-items: flex-start; }
 
   .calendar-grid { font-size: 0.7rem; }
   .cal-day { min-height: 55px; padding: 0.25rem; }

@@ -68,65 +68,89 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
+const STATUSES = ['idea', 'drafting', 'ready', 'published'];
+const typeLabel = { substack: 'Substack', tiktok: 'TikTok' };
+
 function renderIdeas() {
-  const grid = document.getElementById('ideas-grid');
-  const statusFilter = document.getElementById('status-filter').value;
-  const themeFilter = document.getElementById('theme-filter').value;
+  const typeFilter = document.getElementById('type-filter').value;
   const search = document.getElementById('search-ideas').value.toLowerCase();
 
   let filtered = [...ideas];
-  if (statusFilter !== 'all') filtered = filtered.filter(i => i.status === statusFilter);
-  if (themeFilter !== 'all') filtered = filtered.filter(i => (i.themes || []).includes(themeFilter));
+  if (typeFilter !== 'all') filtered = filtered.filter(i => (i.type || 'substack') === typeFilter);
   if (search) filtered = filtered.filter(i =>
     i.title.toLowerCase().includes(search) ||
     (i.notes || '').toLowerCase().includes(search)
   );
 
-  // Sort: upcoming scheduled first, then by created desc
-  filtered.sort((a, b) => {
-    if (a.publishDate && b.publishDate) return a.publishDate.localeCompare(b.publishDate);
-    if (a.publishDate) return -1;
-    if (b.publishDate) return 1;
-    return b.createdAt - a.createdAt;
-  });
-
-  // Update counts
+  // Update count chips
   const counts = { idea: 0, drafting: 0, ready: 0, published: 0 };
   ideas.forEach(i => { if (counts[i.status] !== undefined) counts[i.status]++; });
-  document.getElementById('count-idea').textContent = `${counts.idea} idea${counts.idea !== 1 ? 's' : ''}`;
+  document.getElementById('count-idea').textContent = `${counts.idea} just an idea`;
   document.getElementById('count-drafting').textContent = `${counts.drafting} drafting`;
   document.getElementById('count-ready').textContent = `${counts.ready} ready`;
   document.getElementById('count-published').textContent = `${counts.published} published`;
 
-  if (filtered.length === 0) {
-    grid.innerHTML = `
-      <div class="ideas-empty">
-        <h3>No ideas yet</h3>
-        <p>Hit "+ New Idea" to start brainstorming.</p>
-      </div>`;
-    return;
-  }
+  // Render each column
+  STATUSES.forEach(status => {
+    const col = document.getElementById(`col-${status}`);
+    const colIdeas = filtered
+      .filter(i => i.status === status)
+      .sort((a, b) => {
+        if (a.publishDate && b.publishDate) return a.publishDate.localeCompare(b.publishDate);
+        if (a.publishDate) return -1;
+        if (b.publishDate) return 1;
+        return b.createdAt - a.createdAt;
+      });
 
-  const statusLabel = { idea: '💡 Idea', drafting: '✍️ Drafting', ready: '✅ Ready', published: '📬 Published' };
+    if (colIdeas.length === 0) {
+      col.innerHTML = `<div class="kanban-empty">Drop ideas here</div>`;
+    } else {
+      col.innerHTML = colIdeas.map(idea => {
+        const date = idea.publishDate ? `📅 ${formatDate(idea.publishDate)}` : '';
+        const type = typeLabel[idea.type || 'substack'];
+        const notes = idea.notes ? `<div class="idea-card-notes">${escapeHtml(idea.notes)}</div>` : '';
+        return `
+        <div class="idea-card" data-id="${idea.id}" draggable="true">
+          <div class="idea-card-type">${type}</div>
+          <div class="idea-card-title">${escapeHtml(idea.title)}</div>
+          ${notes}
+          ${date ? `<div class="idea-card-meta">${date}</div>` : ''}
+        </div>`;
+      }).join('');
+    }
 
-  grid.innerHTML = filtered.map(idea => {
-    const themes = (idea.themes || []).map(t => `<span class="idea-theme-tag">${t}</span>`).join('');
-    const date = idea.publishDate ? `📅 ${formatDate(idea.publishDate)}` : '';
-    const notes = idea.notes ? `<div class="idea-card-notes">${escapeHtml(idea.notes)}</div>` : '';
-    return `
-    <div class="idea-card" data-id="${idea.id}">
-      <div class="idea-card-top">
-        <div class="idea-status-badge badge-${idea.status}">${statusLabel[idea.status]}</div>
-      </div>
-      <div class="idea-card-title">${escapeHtml(idea.title)}</div>
-      ${themes ? `<div class="idea-card-themes">${themes}</div>` : ''}
-      ${notes}
-      ${date ? `<div class="idea-card-meta">${date}</div>` : ''}
-    </div>`;
-  }).join('');
+    // Click to edit
+    col.querySelectorAll('.idea-card').forEach(card => {
+      card.addEventListener('click', () => openIdeaModal(card.dataset.id));
+    });
 
-  grid.querySelectorAll('.idea-card').forEach(card => {
-    card.addEventListener('click', () => openIdeaModal(card.dataset.id));
+    // Drag events on cards
+    col.querySelectorAll('.idea-card').forEach(card => {
+      card.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', card.dataset.id);
+        card.classList.add('dragging');
+      });
+      card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    });
+
+    // Drop events on column
+    col.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      col.classList.add('drag-over');
+    });
+    col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+    col.addEventListener('drop', (e) => {
+      e.preventDefault();
+      col.classList.remove('drag-over');
+      const id = e.dataTransfer.getData('text/plain');
+      const idx = ideas.findIndex(i => i.id === id);
+      if (idx > -1 && ideas[idx].status !== status) {
+        ideas[idx].status = status;
+        scheduleCloudSave();
+        renderIdeas();
+        renderCalendar();
+      }
+    });
   });
 }
 
@@ -148,16 +172,10 @@ function openIdeaModal(id) {
   const modal = document.getElementById('idea-modal');
 
   document.getElementById('modal-title').value = idea ? idea.title : '';
+  document.getElementById('modal-type').value = idea ? (idea.type || 'substack') : 'substack';
   document.getElementById('modal-status').value = idea ? idea.status : 'idea';
   document.getElementById('modal-date').value = idea ? (idea.publishDate || '') : '';
   document.getElementById('modal-notes').value = idea ? (idea.notes || '') : '';
-  document.getElementById('modal-link').value = idea ? (idea.link || '') : '';
-
-  // Theme checkboxes
-  const themes = idea ? (idea.themes || []) : [];
-  document.querySelectorAll('#theme-checkboxes input').forEach(cb => {
-    cb.checked = themes.includes(cb.value);
-  });
 
   document.getElementById('modal-delete-btn').style.display = id ? 'inline-flex' : 'none';
   document.getElementById('modal-save-btn').textContent = id ? 'Save Changes' : 'Save Idea';
@@ -181,15 +199,12 @@ document.getElementById('modal-save-btn').addEventListener('click', () => {
   const title = document.getElementById('modal-title').value.trim();
   if (!title) { document.getElementById('modal-title').focus(); return; }
 
-  const themes = [...document.querySelectorAll('#theme-checkboxes input:checked')].map(cb => cb.value);
-
   const data = {
     title,
+    type: document.getElementById('modal-type').value,
     status: document.getElementById('modal-status').value,
     publishDate: document.getElementById('modal-date').value,
-    themes,
     notes: document.getElementById('modal-notes').value.trim(),
-    link: document.getElementById('modal-link').value.trim(),
   };
 
   if (editingIdeaId) {
@@ -216,8 +231,7 @@ document.getElementById('modal-delete-btn').addEventListener('click', () => {
 });
 
 // ── Filters ──
-document.getElementById('status-filter').addEventListener('change', renderIdeas);
-document.getElementById('theme-filter').addEventListener('change', renderIdeas);
+document.getElementById('type-filter').addEventListener('change', renderIdeas);
 document.getElementById('search-ideas').addEventListener('input', renderIdeas);
 
 // ── Calendar ──

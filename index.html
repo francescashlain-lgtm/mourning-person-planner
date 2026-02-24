@@ -60,48 +60,61 @@
 
       <!-- IDEAS TAB -->
       <section id="ideas-tab" class="tab-content active">
-        <div class="tab-header">
-          <div class="tab-header-left">
+        <div class="tab-header ideas-tab-header">
+          <div class="ideas-header-top">
             <h2>Ideas</h2>
+            <button id="new-idea-btn" class="btn-primary">+ New Idea</button>
+          </div>
+          <div class="ideas-header-bottom">
             <div class="idea-counts">
-              <span id="count-idea" class="count-chip chip-idea">0 ideas</span>
+              <span id="count-idea" class="count-chip chip-idea">0 just an idea</span>
               <span id="count-drafting" class="count-chip chip-drafting">0 drafting</span>
               <span id="count-ready" class="count-chip chip-ready">0 ready</span>
               <span id="count-published" class="count-chip chip-published">0 published</span>
             </div>
+            <div class="filters-row">
+              <select id="type-filter" class="filter-select">
+                <option value="all">All Types</option>
+                <option value="substack">Substack Article</option>
+                <option value="tiktok">TikTok</option>
+              </select>
+              <input type="text" id="search-ideas" class="filter-search" placeholder="Search ideas...">
+            </div>
           </div>
-          <button id="new-idea-btn" class="btn-primary">+ New Idea</button>
         </div>
 
-        <div class="filters-row">
-          <select id="status-filter" class="filter-select">
-            <option value="all">All Statuses</option>
-            <option value="idea">💡 Idea</option>
-            <option value="drafting">✍️ Drafting</option>
-            <option value="ready">✅ Ready</option>
-            <option value="published">📬 Published</option>
-          </select>
-          <select id="theme-filter" class="filter-select">
-            <option value="all">All Themes</option>
-            <option value="grief">Grief</option>
-            <option value="practical">Practical</option>
-            <option value="personal">Personal</option>
-            <option value="timely">Timely</option>
-            <option value="community">Community</option>
-            <option value="resources">Resources</option>
-          </select>
-          <input type="text" id="search-ideas" class="filter-search" placeholder="Search ideas...">
-        </div>
-
-        <div class="ideas-grid" id="ideas-grid">
-          <!-- populated by JS -->
+        <div class="kanban-board">
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">Just an Idea</span>
+            </div>
+            <div class="kanban-col-body" id="col-idea" data-status="idea"></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">Drafting</span>
+            </div>
+            <div class="kanban-col-body" id="col-drafting" data-status="drafting"></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">Ready</span>
+            </div>
+            <div class="kanban-col-body" id="col-ready" data-status="ready"></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">Published</span>
+            </div>
+            <div class="kanban-col-body" id="col-published" data-status="published"></div>
+          </div>
         </div>
       </section>
 
       <!-- CALENDAR TAB -->
       <section id="calendar-tab" class="tab-content">
-        <div class="tab-header">
-          <div class="tab-header-left">
+        <div class="tab-header tab-header-row">
+          <div style="display:flex;align-items:center;gap:0.5rem;">
             <button id="cal-prev" class="cal-nav-btn">‹</button>
             <h2 id="cal-month-title">Month Year</h2>
             <button id="cal-next" class="cal-nav-btn">›</button>
@@ -269,40 +282,31 @@
       <div class="modal-body">
         <div class="modal-row">
           <div class="modal-field">
-            <label>Status</label>
-            <select id="modal-status" class="modal-select">
-              <option value="idea">💡 Idea</option>
-              <option value="drafting">✍️ Drafting</option>
-              <option value="ready">✅ Ready</option>
-              <option value="published">📬 Published</option>
+            <label>Type</label>
+            <select id="modal-type" class="modal-select">
+              <option value="substack">Substack Article</option>
+              <option value="tiktok">TikTok</option>
             </select>
           </div>
           <div class="modal-field">
-            <label>Publish Date</label>
-            <input type="date" id="modal-date" class="modal-input">
+            <label>Status</label>
+            <select id="modal-status" class="modal-select">
+              <option value="idea">Just an Idea</option>
+              <option value="drafting">Drafting</option>
+              <option value="ready">Ready</option>
+              <option value="published">Published</option>
+            </select>
           </div>
         </div>
 
         <div class="modal-field">
-          <label>Themes</label>
-          <div class="theme-checkboxes" id="theme-checkboxes">
-            <label class="theme-check"><input type="checkbox" value="grief"> Grief</label>
-            <label class="theme-check"><input type="checkbox" value="practical"> Practical</label>
-            <label class="theme-check"><input type="checkbox" value="personal"> Personal</label>
-            <label class="theme-check"><input type="checkbox" value="timely"> Timely</label>
-            <label class="theme-check"><input type="checkbox" value="community"> Community</label>
-            <label class="theme-check"><input type="checkbox" value="resources"> Resources</label>
-          </div>
+          <label>Publish Date <span class="field-hint">(optional)</span></label>
+          <input type="date" id="modal-date" class="modal-input">
         </div>
 
         <div class="modal-field">
           <label>Notes</label>
           <textarea id="modal-notes" class="modal-textarea" placeholder="Angle, hook, personal connection, related pieces, research needed..."></textarea>
-        </div>
-
-        <div class="modal-field">
-          <label>Substack Link <span class="field-hint">(once published)</span></label>
-          <input type="url" id="modal-link" class="modal-input" placeholder="https://mourningperson.substack.com/p/...">
         </div>
       </div>
 
