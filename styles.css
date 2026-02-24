@@ -1061,6 +1061,36 @@ body {
 
 .modal-textarea:focus { border-color: var(--maroon); }
 
+.format-pills {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.format-pill {
+  padding: 0.35rem 1rem;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+
+.format-pill:hover {
+  border-color: var(--maroon);
+  color: var(--maroon);
+}
+
+.format-pill.active {
+  background: var(--maroon);
+  border-color: var(--maroon);
+  color: var(--white);
+}
+
 .modal-footer {
   padding: 1rem 1.75rem 1.5rem;
   display: flex;

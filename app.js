@@ -186,6 +186,8 @@ function openIdeaModal(id, prefill = null) {
   document.getElementById('modal-pillar').value = prefill?.pillar || (idea ? (idea.pillar || '') : '');
   document.getElementById('modal-date').value = idea ? (idea.publishDate || '') : '';
   document.getElementById('modal-notes').value = idea ? (idea.notes || '') : '';
+  setModalFormat(idea ? (idea.format || null) : null);
+  updateFormatVisibility();
 
   document.getElementById('modal-delete-btn').style.display = id ? 'inline-flex' : 'none';
   document.getElementById('modal-save-btn').textContent = id ? 'Save Changes' : 'Save Idea';
@@ -209,13 +211,15 @@ document.getElementById('modal-save-btn').addEventListener('click', () => {
   const title = document.getElementById('modal-title').value.trim();
   if (!title) { document.getElementById('modal-title').focus(); return; }
 
+  const type = document.getElementById('modal-type').value;
   const data = {
     title,
-    type: document.getElementById('modal-type').value,
+    type,
     status: document.getElementById('modal-status').value,
     pillar: document.getElementById('modal-pillar').value,
     publishDate: document.getElementById('modal-date').value,
     notes: document.getElementById('modal-notes').value.trim(),
+    format: type === 'tiktok' ? (document.querySelector('.format-pill.active')?.dataset.format || null) : null,
   };
 
   if (editingIdeaId) {
@@ -239,6 +243,31 @@ document.getElementById('modal-delete-btn').addEventListener('click', () => {
   renderIdeas();
   renderCalendar();
   closeIdeaModal();
+});
+
+// ── TikTok format pills ──
+function updateFormatVisibility() {
+  const isTikTok = document.getElementById('modal-type').value === 'tiktok';
+  document.getElementById('modal-format-wrap').style.display = isTikTok ? '' : 'none';
+}
+
+function setModalFormat(format) {
+  document.querySelectorAll('.format-pill').forEach(pill => {
+    pill.classList.toggle('active', pill.dataset.format === format);
+  });
+}
+
+document.getElementById('modal-type').addEventListener('change', () => {
+  updateFormatVisibility();
+  setModalFormat(null);
+});
+
+document.querySelectorAll('.format-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    const already = pill.classList.contains('active');
+    setModalFormat(null);
+    if (!already) pill.classList.add('active');
+  });
 });
 
 // ── Filters ──
