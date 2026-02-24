@@ -482,7 +482,9 @@ const promoteConfig = {
     titlePlaceholder: 'Person\'s name',
     statuses: ['Dream List', 'Reached Out', 'Confirmed'],
     showDate: false,
-    showUrl: false,
+    showUrl: true,
+    urlLabel: 'Instagram / TikTok / Website',
+    urlPlaceholder: 'https://instagram.com/...',
   },
 };
 
@@ -562,6 +564,10 @@ function openPromoteModal(section, id = null) {
   // Show/hide optional fields
   document.getElementById('promote-modal-date-wrap').style.display = cfg.showDate ? '' : 'none';
   document.getElementById('promote-modal-url-wrap').style.display = cfg.showUrl ? '' : 'none';
+  if (cfg.showUrl) {
+    document.querySelector('#promote-modal-url-wrap label').firstChild.textContent = cfg.urlLabel || 'Substack URL';
+    document.getElementById('promote-modal-url').placeholder = cfg.urlPlaceholder || 'https://';
+  }
 
   document.getElementById('promote-modal-save').textContent = id ? 'Save Changes' : 'Save';
   document.getElementById('promote-modal-delete').style.display = id ? 'inline-flex' : 'none';
