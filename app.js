@@ -655,6 +655,28 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ── Image resize utility ──
+function resizeImage(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 400;
+        let w = img.width, h = img.height;
+        if (w > h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        else if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.65));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 // ── Merch ──
 const MERCH_STATUS_COLORS = {
   'Just an Idea': 'status-idea',
@@ -673,8 +695,10 @@ function renderMerch() {
     const colorClass = MERCH_STATUS_COLORS[item.status] || 'status-idea';
     const notes = item.notes ? `<div class="merch-card-notes">${escapeHtml(item.notes)}</div>` : '';
     const price = item.price ? `<div class="merch-card-price">${escapeHtml(item.price)}</div>` : '';
+    const img = item.image ? `<img class="merch-card-image" src="${item.image}" alt="">` : '';
     return `
     <div class="merch-card" data-id="${item.id}">
+      ${img}
       <div class="merch-card-top">
         <span class="merch-category-badge">${escapeHtml(item.category)}</span>
         <span class="promote-status-badge ${colorClass}">${item.status}</span>
@@ -691,6 +715,31 @@ function renderMerch() {
 }
 
 let editingMerchId = null;
+let currentMerchImage = null;
+
+function setMerchImagePreview(src) {
+  currentMerchImage = src || null;
+  document.getElementById('merch-image-thumb').src = src || '';
+  document.getElementById('merch-image-placeholder').style.display = src ? 'none' : 'flex';
+  document.getElementById('merch-image-preview').style.display = src ? 'block' : 'none';
+}
+
+document.getElementById('merch-image-area').addEventListener('click', () => {
+  if (!currentMerchImage) document.getElementById('merch-image-input').click();
+});
+
+document.getElementById('merch-image-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const src = await resizeImage(file);
+  setMerchImagePreview(src);
+  e.target.value = '';
+});
+
+document.getElementById('merch-image-remove').addEventListener('click', (e) => {
+  e.stopPropagation();
+  setMerchImagePreview(null);
+});
 
 document.getElementById('new-merch-btn').addEventListener('click', () => openMerchModal(null));
 
@@ -703,6 +752,7 @@ function openMerchModal(id) {
   document.getElementById('merch-modal-status').value = item ? (item.status || 'Just an Idea') : 'Just an Idea';
   document.getElementById('merch-modal-price').value = item ? (item.price || '') : '';
   document.getElementById('merch-modal-notes').value = item ? (item.notes || '') : '';
+  setMerchImagePreview(item ? (item.image || null) : null);
 
   document.getElementById('merch-modal-delete').style.display = id ? 'inline-flex' : 'none';
   document.getElementById('merch-modal-save').textContent = id ? 'Save Changes' : 'Save';
@@ -732,6 +782,7 @@ document.getElementById('merch-modal-save').addEventListener('click', () => {
     status: document.getElementById('merch-modal-status').value,
     price: document.getElementById('merch-modal-price').value.trim(),
     notes: document.getElementById('merch-modal-notes').value.trim(),
+    image: currentMerchImage,
   };
 
   if (editingMerchId) {
