@@ -742,19 +742,6 @@ body {
 
 .reddit-error a { color: var(--maroon); }
 
-.trends-embed-wrap {
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  background: var(--cream);
-}
-
-.trends-iframe {
-  width: 100%;
-  height: 350px;
-  border: none;
-  display: block;
-}
 
 .section-header-row {
   display: flex;
@@ -1050,5 +1037,4 @@ body {
 
   .reddit-posts { grid-template-columns: 1fr; }
   .strategy-cards { grid-template-columns: 1fr; }
-  .trends-iframe { height: 280px; }
 }
