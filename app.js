@@ -66,6 +66,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     if (tab === 'calendar') renderCalendar();
     if (tab === 'trending') fetchReddit(currentSubreddit);
     if (tab === 'promote') renderPromote();
+    if (tab === 'merch') renderMerch();
   });
 });
 
