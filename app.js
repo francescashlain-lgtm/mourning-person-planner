@@ -109,10 +109,12 @@ function renderIdeas() {
         const date = idea.publishDate ? `📅 ${formatDate(idea.publishDate)}` : '';
         const type = typeLabel[idea.type || 'substack'];
         const notes = idea.notes ? `<div class="idea-card-notes">${escapeHtml(idea.notes)}</div>` : '';
+        const series = idea.series ? `<div class="idea-card-series">Part of: ${escapeHtml(idea.series)}</div>` : '';
         return `
         <div class="idea-card" data-id="${idea.id}" draggable="true">
           <div class="idea-card-type">${type}</div>
           <div class="idea-card-title">${escapeHtml(idea.title)}</div>
+          ${series}
           ${notes}
           ${date ? `<div class="idea-card-meta">${date}</div>` : ''}
         </div>`;
@@ -174,6 +176,7 @@ function openIdeaModal(id) {
   document.getElementById('modal-title').value = idea ? idea.title : '';
   document.getElementById('modal-type').value = idea ? (idea.type || 'substack') : 'substack';
   document.getElementById('modal-status').value = idea ? idea.status : 'idea';
+  document.getElementById('modal-series').value = idea ? (idea.series || '') : '';
   document.getElementById('modal-date').value = idea ? (idea.publishDate || '') : '';
   document.getElementById('modal-notes').value = idea ? (idea.notes || '') : '';
 
@@ -203,6 +206,7 @@ document.getElementById('modal-save-btn').addEventListener('click', () => {
     title,
     type: document.getElementById('modal-type').value,
     status: document.getElementById('modal-status').value,
+    series: document.getElementById('modal-series').value.trim(),
     publishDate: document.getElementById('modal-date').value,
     notes: document.getElementById('modal-notes').value.trim(),
   };
