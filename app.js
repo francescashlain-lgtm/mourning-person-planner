@@ -10,6 +10,7 @@ let ideas = [];
 let events = [];
 let crossPosts = [];
 let collaborators = [];
+let merch = [];
 let calendarDate = new Date(); // month currently shown
 
 // ── Cloud sync ──
@@ -18,7 +19,7 @@ let saveTimer = null;
 function scheduleCloudSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    saveToCloud({ ideas, events, crossPosts, collaborators });
+    saveToCloud({ ideas, events, crossPosts, collaborators, merch });
   }, 1200);
 }
 
@@ -27,6 +28,7 @@ window.onCloudDataReceived = function(data) {
   if (data.events) events = data.events;
   if (data.crossPosts) crossPosts = data.crossPosts;
   if (data.collaborators) collaborators = data.collaborators;
+  if (data.merch) merch = data.merch;
   renderAll();
 };
 
@@ -164,6 +166,7 @@ function renderAll() {
   renderIdeas();
   renderCalendar();
   renderPromote();
+  renderMerch();
 }
 
 // ── Idea Modal ──
@@ -650,6 +653,106 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+// ── Merch ──
+const MERCH_STATUS_COLORS = {
+  'Just an Idea': 'status-idea',
+  'In Development': 'status-drafting',
+  'Ready to Launch': 'status-ready',
+  'Selling': 'status-done',
+};
+
+function renderMerch() {
+  const grid = document.getElementById('merch-grid');
+  if (!merch.length) {
+    grid.innerHTML = `<div class="merch-empty">No merch ideas yet. Hit "+ Add Idea" to start your list.</div>`;
+    return;
+  }
+  grid.innerHTML = merch.map(item => {
+    const colorClass = MERCH_STATUS_COLORS[item.status] || 'status-idea';
+    const notes = item.notes ? `<div class="merch-card-notes">${escapeHtml(item.notes)}</div>` : '';
+    const price = item.price ? `<div class="merch-card-price">${escapeHtml(item.price)}</div>` : '';
+    return `
+    <div class="merch-card" data-id="${item.id}">
+      <div class="merch-card-top">
+        <span class="merch-category-badge">${escapeHtml(item.category)}</span>
+        <span class="promote-status-badge ${colorClass}">${item.status}</span>
+      </div>
+      <div class="merch-card-title">${escapeHtml(item.title)}</div>
+      ${price}
+      ${notes}
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.merch-card').forEach(card => {
+    card.addEventListener('click', () => openMerchModal(card.dataset.id));
+  });
+}
+
+let editingMerchId = null;
+
+document.getElementById('new-merch-btn').addEventListener('click', () => openMerchModal(null));
+
+function openMerchModal(id) {
+  editingMerchId = id;
+  const item = id ? merch.find(m => m.id === id) : null;
+
+  document.getElementById('merch-modal-title').value = item ? item.title : '';
+  document.getElementById('merch-modal-category').value = item ? (item.category || 'Apparel') : 'Apparel';
+  document.getElementById('merch-modal-status').value = item ? (item.status || 'Just an Idea') : 'Just an Idea';
+  document.getElementById('merch-modal-price').value = item ? (item.price || '') : '';
+  document.getElementById('merch-modal-notes').value = item ? (item.notes || '') : '';
+
+  document.getElementById('merch-modal-delete').style.display = id ? 'inline-flex' : 'none';
+  document.getElementById('merch-modal-save').textContent = id ? 'Save Changes' : 'Save';
+
+  document.getElementById('merch-modal').classList.add('active');
+  setTimeout(() => document.getElementById('merch-modal-title').focus(), 50);
+}
+
+function closeMerchModal() {
+  document.getElementById('merch-modal').classList.remove('active');
+  editingMerchId = null;
+}
+
+document.getElementById('merch-modal-close').addEventListener('click', closeMerchModal);
+document.getElementById('merch-modal-cancel').addEventListener('click', closeMerchModal);
+document.getElementById('merch-modal').addEventListener('click', e => {
+  if (e.target.id === 'merch-modal') closeMerchModal();
+});
+
+document.getElementById('merch-modal-save').addEventListener('click', () => {
+  const title = document.getElementById('merch-modal-title').value.trim();
+  if (!title) { document.getElementById('merch-modal-title').focus(); return; }
+
+  const data = {
+    title,
+    category: document.getElementById('merch-modal-category').value,
+    status: document.getElementById('merch-modal-status').value,
+    price: document.getElementById('merch-modal-price').value.trim(),
+    notes: document.getElementById('merch-modal-notes').value.trim(),
+  };
+
+  if (editingMerchId) {
+    const idx = merch.findIndex(m => m.id === editingMerchId);
+    if (idx > -1) merch[idx] = { ...merch[idx], ...data };
+  } else {
+    merch.unshift({ id: generateId(), ...data, createdAt: Date.now() });
+  }
+
+  scheduleCloudSave();
+  renderMerch();
+  closeMerchModal();
+});
+
+document.getElementById('merch-modal-delete').addEventListener('click', () => {
+  if (!editingMerchId) return;
+  if (!confirm('Delete this merch idea?')) return;
+  merch = merch.filter(m => m.id !== editingMerchId);
+  scheduleCloudSave();
+  renderMerch();
+  closeMerchModal();
+});
 
 // ── Brainstorm ──
 const BRAINSTORM_KEY_STORE = 'mp_anthropic_key';

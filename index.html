@@ -53,6 +53,7 @@
         <button class="nav-btn" data-tab="calendar">Calendar</button>
         <button class="nav-btn" data-tab="trending">Trending</button>
         <button class="nav-btn" data-tab="promote">Promote</button>
+        <button class="nav-btn" data-tab="merch">Merch</button>
       </nav>
     </header>
 
@@ -232,6 +233,18 @@
 
       </section>
 
+      <!-- MERCH TAB -->
+      <section id="merch-tab" class="tab-content">
+        <div class="tab-header tab-header-row">
+          <div>
+            <h2>Merch Ideas</h2>
+            <p class="section-hint">Products you'd love to create and sell.</p>
+          </div>
+          <button id="new-merch-btn" class="btn-primary">+ Add Idea</button>
+        </div>
+        <div class="merch-grid" id="merch-grid"></div>
+      </section>
+
     </main>
   </div>
 
@@ -352,6 +365,55 @@
         <div class="modal-footer-right">
           <button id="promote-modal-cancel" class="btn-secondary">Cancel</button>
           <button id="promote-modal-save" class="btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Merch Modal -->
+  <div class="modal" id="merch-modal">
+    <div class="modal-content modal-content-sm">
+      <button class="modal-close" id="merch-modal-close">&times;</button>
+      <div class="modal-header">
+        <input type="text" id="merch-modal-title" class="modal-title-input" placeholder="What's the product?">
+      </div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <div class="modal-field">
+            <label>Category</label>
+            <select id="merch-modal-category" class="modal-select">
+              <option value="Apparel">Apparel</option>
+              <option value="Accessories">Accessories</option>
+              <option value="Home & Living">Home &amp; Living</option>
+              <option value="Stationery">Stationery</option>
+              <option value="Digital">Digital</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="modal-field">
+            <label>Status</label>
+            <select id="merch-modal-status" class="modal-select">
+              <option value="Just an Idea">Just an Idea</option>
+              <option value="In Development">In Development</option>
+              <option value="Ready to Launch">Ready to Launch</option>
+              <option value="Selling">Selling</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-field">
+          <label>Price Point <span class="field-hint">(optional)</span></label>
+          <input type="text" id="merch-modal-price" class="modal-input" placeholder="e.g. $28, $15–20">
+        </div>
+        <div class="modal-field">
+          <label>Notes</label>
+          <textarea id="merch-modal-notes" class="modal-textarea" placeholder="Design ideas, vendor, materials, inspiration..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="merch-modal-delete" class="btn-delete" style="display:none;">Delete</button>
+        <div class="modal-footer-right">
+          <button id="merch-modal-cancel" class="btn-secondary">Cancel</button>
+          <button id="merch-modal-save" class="btn-primary">Save</button>
         </div>
       </div>
     </div>
