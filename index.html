@@ -89,14 +89,7 @@
 
         <!-- Brainstorm Panel -->
         <div id="brainstorm-panel" class="brainstorm-panel" style="display:none;">
-          <div id="brainstorm-setup" class="brainstorm-setup">
-            <p class="brainstorm-setup-text">Enter your Anthropic API key to use AI brainstorming. Saved only in your browser — never stored on any server.</p>
-            <div class="brainstorm-api-row">
-              <input type="password" id="brainstorm-key-input" class="modal-input" placeholder="sk-ant-api...">
-              <button id="brainstorm-key-save" class="btn-primary">Save Key</button>
-            </div>
-          </div>
-          <div id="brainstorm-form" class="brainstorm-form" style="display:none;">
+          <div class="brainstorm-form">
             <div class="brainstorm-fields">
               <select id="brainstorm-pillar" class="filter-select">
                 <option value="">Any pillar</option>
@@ -106,8 +99,7 @@
                 <option value="MOURNING ROUTINE">MOURNING ROUTINE</option>
                 <option value="RECIPES FOR GRIEF">RECIPES FOR GRIEF</option>
               </select>
-              <button id="brainstorm-generate" class="btn-primary">✦ Generate Ideas</button>
-              <button id="brainstorm-key-change" class="btn-icon-sm" title="Change API key">⚙</button>
+              <button id="brainstorm-generate" class="btn-primary">✦ Generate Prompt</button>
             </div>
             <textarea id="brainstorm-context" class="brainstorm-context-input" placeholder="What are you thinking about, feeling, or exploring lately? (optional — more context = better ideas)"></textarea>
           </div>
