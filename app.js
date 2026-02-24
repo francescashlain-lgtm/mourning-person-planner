@@ -824,7 +824,7 @@ document.getElementById('brainstorm-generate').addEventListener('click', () => {
 Content pillars:
 - CRYING AND CRAFTING: grief-adjacent creative projects and activities
 - GRIEVER'S GUIDE TO:: practical guides for navigating specific grief moments (first holidays, clearing belongings, etc.)
-- GRIEF IN CULTURE: how grief appears in media, food, art, and pop culture — analyzed with a personal lens
+- MOURNING MEDIA: TV shows, movies, books, and cultural events that feature grief well — your take on how culture handles loss
 - MOURNING ROUTINE: personal morning/mourning rituals and daily life with grief
 - RECIPES FOR GRIEF: cooking from her late mother's handwritten recipe cards — dishes she never ate or made before, meeting a side of her mother she didn't know through food
 ${pillar ? `\nFocus ideas on the "${pillar}" pillar.` : ''}${context ? `\nContext from the writer: ${context}` : ''}
