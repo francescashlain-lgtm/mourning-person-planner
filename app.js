@@ -981,6 +981,7 @@ Content pillars:
 - MOURNING MEDIA: TV shows, movies, books, and cultural events that feature grief well — your take on how culture handles loss
 - MOURNING ROUTINE: personal morning/mourning rituals and daily life with grief
 - RECIPES FOR GRIEF: cooking from her late mother's handwritten recipe cards — dishes she never ate or made before, meeting a side of her mother she didn't know through food
+- DREADING TO WED: the complicated grief of wedding planning and milestone moments without the people you've lost — incorporating them, missing them, and the dread woven into joy
 ${pillar ? `\nFocus ideas on the "${pillar}" pillar.` : ''}${context ? `\nContext from the writer: ${context}` : ''}
 
 Please generate 8 specific, compelling article or TikTok video ideas. Make titles strong and evocative — specific, not generic. For each include a one-sentence angle or hook. Mix Substack articles and TikTok videos.`;
