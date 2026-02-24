@@ -272,13 +272,15 @@ function renderCalendar() {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
     const dayIdeas = ideas.filter(i => i.publishDate === dateStr);
-    const events = dayIdeas.map(i =>
-      `<div class="cal-event status-${i.status}" data-id="${i.id}">${escapeHtml(i.title)}</div>`
-    ).join('');
+    const dayEvents = events.filter(e => e.date === dateStr);
+    const chips = [
+      ...dayIdeas.map(i => `<div class="cal-event status-${i.status}" data-id="${i.id}" data-type="idea">${escapeHtml(i.title)}</div>`),
+      ...dayEvents.map(e => `<div class="cal-event cal-event-promote" data-id="${e.id}" data-type="promote">📅 ${escapeHtml(e.title)}</div>`)
+    ].join('');
     html += `
       <div class="cal-day${isToday ? ' today' : ''}" data-date="${dateStr}">
         <div class="cal-day-num">${d}</div>
-        ${events}
+        ${chips}
       </div>`;
   }
 
@@ -294,10 +296,10 @@ function renderCalendar() {
   // Click on a day to assign
   grid.querySelectorAll('.cal-day:not(.other-month)').forEach(day => {
     day.addEventListener('click', (e) => {
-      // If clicking an event chip, open that idea instead
       const eventEl = e.target.closest('.cal-event');
       if (eventEl) {
-        openIdeaModal(eventEl.dataset.id);
+        if (eventEl.dataset.type === 'promote') openPromoteModal('events', eventEl.dataset.id);
+        else openIdeaModal(eventEl.dataset.id);
         return;
       }
       openCalModal(day.dataset.date);
@@ -311,26 +313,37 @@ function renderCalendar() {
 function renderUpcoming() {
   const list = document.getElementById('cal-upcoming-list');
   const today = new Date().toISOString().slice(0, 10);
-  const upcoming = ideas
+
+  const upcomingIdeas = ideas
     .filter(i => i.publishDate && i.publishDate >= today)
-    .sort((a, b) => a.publishDate.localeCompare(b.publishDate))
-    .slice(0, 8);
+    .map(i => ({ id: i.id, date: i.publishDate, title: i.title, type: 'idea', status: i.status }));
+
+  const upcomingEvents = events
+    .filter(e => e.date && e.date >= today)
+    .map(e => ({ id: e.id, date: e.date, title: e.title, type: 'event', status: e.status }));
+
+  const upcoming = [...upcomingIdeas, ...upcomingEvents]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 10);
 
   if (upcoming.length === 0) {
-    list.innerHTML = `<p class="upcoming-empty">No upcoming scheduled posts. Assign dates to your ideas in the calendar.</p>`;
+    list.innerHTML = `<p class="upcoming-empty">No upcoming scheduled posts or events.</p>`;
     return;
   }
 
-  list.innerHTML = upcoming.map(i => `
-    <div class="upcoming-item" data-id="${i.id}">
-      <div class="upcoming-date">${formatDate(i.publishDate)}</div>
-      <div class="upcoming-title">${escapeHtml(i.title)}</div>
-      <div class="idea-status-badge badge-${i.status}" style="font-size:0.6rem">${i.status}</div>
+  list.innerHTML = upcoming.map(item => `
+    <div class="upcoming-item" data-id="${item.id}" data-type="${item.type}">
+      <div class="upcoming-date">${formatDate(item.date)}</div>
+      <div class="upcoming-title">${item.type === 'event' ? '📅 ' : ''}${escapeHtml(item.title)}</div>
+      <span class="promote-status-badge ${item.type === 'event' ? 'status-idea' : `badge-${item.status}`}" style="font-size:0.6rem">${item.status}</span>
     </div>`
   ).join('');
 
   list.querySelectorAll('.upcoming-item').forEach(item => {
-    item.addEventListener('click', () => openIdeaModal(item.dataset.id));
+    item.addEventListener('click', () => {
+      if (item.dataset.type === 'event') openPromoteModal('events', item.dataset.id);
+      else openIdeaModal(item.dataset.id);
+    });
   });
 }
 
@@ -591,6 +604,7 @@ document.getElementById('promote-modal-save').addEventListener('click', () => {
   setPromoteList(editingPromoteSection, list);
   scheduleCloudSave();
   renderPromote();
+  if (editingPromoteSection === 'events') renderCalendar();
   closePromoteModal();
 });
 
@@ -601,6 +615,7 @@ document.getElementById('promote-modal-delete').addEventListener('click', () => 
   setPromoteList(editingPromoteSection, list);
   scheduleCloudSave();
   renderPromote();
+  if (editingPromoteSection === 'events') renderCalendar();
   closePromoteModal();
 });
 

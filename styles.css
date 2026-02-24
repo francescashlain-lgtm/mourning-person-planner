@@ -575,6 +575,7 @@ body {
 .cal-event.status-drafting { background: #7b82e0; color: var(--white); }
 .cal-event.status-ready { background: #52c27a; color: var(--white); }
 .cal-event.status-published { background: var(--maroon); color: var(--white); }
+.cal-event.cal-event-promote { background: var(--gold); color: var(--maroon); font-weight: 600; }
 
 /* Upcoming list */
 .cal-upcoming h3 {
