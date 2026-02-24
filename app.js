@@ -7,7 +7,9 @@ import {
 
 // ── State ──
 let ideas = [];
-let promoteNotes = '';
+let events = [];
+let crossPosts = [];
+let collaborators = [];
 let calendarDate = new Date(); // month currently shown
 
 // ── Cloud sync ──
@@ -16,13 +18,15 @@ let saveTimer = null;
 function scheduleCloudSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    saveToCloud({ ideas, promoteNotes });
+    saveToCloud({ ideas, events, crossPosts, collaborators });
   }, 1200);
 }
 
 window.onCloudDataReceived = function(data) {
   if (data.ideas) ideas = data.ideas;
-  if (data.promoteNotes !== undefined) promoteNotes = data.promoteNotes;
+  if (data.events) events = data.events;
+  if (data.crossPosts) crossPosts = data.crossPosts;
+  if (data.collaborators) collaborators = data.collaborators;
   renderAll();
 };
 
@@ -59,6 +63,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     document.getElementById(`${tab}-tab`).classList.add('active');
     if (tab === 'calendar') renderCalendar();
     if (tab === 'trending') fetchReddit(currentSubreddit);
+    if (tab === 'promote') renderPromote();
   });
 });
 
@@ -158,7 +163,7 @@ function renderIdeas() {
 function renderAll() {
   renderIdeas();
   renderCalendar();
-  document.getElementById('promote-notes').value = promoteNotes;
+  renderPromote();
 }
 
 // ── Idea Modal ──
@@ -445,15 +450,162 @@ document.getElementById('reddit-refresh').addEventListener('click', () => {
   fetchReddit(currentSubreddit);
 });
 
-// ── Promote notes ──
-let promoteTimer = null;
-document.getElementById('promote-notes').addEventListener('input', (e) => {
-  promoteNotes = e.target.value;
-  clearTimeout(promoteTimer);
-  promoteTimer = setTimeout(() => {
-    saveToCloud({ ideas, promoteNotes });
-    showSaved('promote-saved');
-  }, 1500);
+// ── Promote ──
+
+const promoteConfig = {
+  events: {
+    titlePlaceholder: 'Event idea',
+    statuses: ['Idea', 'Planned', 'Done'],
+    showDate: true,
+    showUrl: false,
+  },
+  crossPosts: {
+    titlePlaceholder: 'Writer / Publication name',
+    statuses: ['Wishlist', 'Reached Out', 'Confirmed'],
+    showDate: false,
+    showUrl: true,
+  },
+  collaborators: {
+    titlePlaceholder: 'Person\'s name',
+    statuses: ['Dream List', 'Reached Out', 'Confirmed'],
+    showDate: false,
+    showUrl: false,
+  },
+};
+
+const promoteData = () => ({ events, crossPosts, collaborators });
+
+function getPromoteList(section) {
+  if (section === 'events') return events;
+  if (section === 'crossPosts') return crossPosts;
+  if (section === 'collaborators') return collaborators;
+}
+
+function setPromoteList(section, list) {
+  if (section === 'events') events = list;
+  else if (section === 'crossPosts') crossPosts = list;
+  else if (section === 'collaborators') collaborators = list;
+}
+
+const statusColors = {
+  'Idea': 'status-idea', 'Planned': 'status-drafting', 'Done': 'status-done',
+  'Wishlist': 'status-idea', 'Reached Out': 'status-drafting', 'Confirmed': 'status-done',
+  'Dream List': 'status-idea',
+};
+
+function renderPromote() {
+  ['events', 'crossPosts', 'collaborators'].forEach(section => {
+    const list = getPromoteList(section);
+    const container = document.getElementById(`promote-list-${section}`);
+    if (!list.length) {
+      container.innerHTML = `<div class="promote-empty">Nothing added yet.</div>`;
+      return;
+    }
+    container.innerHTML = list.map(item => {
+      const colorClass = statusColors[item.status] || 'status-idea';
+      const url = item.url ? `<a class="promote-card-url" href="${item.url}" target="_blank">${item.url}</a>` : '';
+      const date = item.date ? `<span>📅 ${formatDate(item.date)}</span>` : '';
+      const notes = item.notes ? `<div class="promote-card-notes">${escapeHtml(item.notes)}</div>` : '';
+      return `
+      <div class="promote-card" data-id="${item.id}" data-section="${section}">
+        <div class="promote-card-top">
+          <div class="promote-card-title">${escapeHtml(item.title)}</div>
+          <span class="promote-status-badge ${colorClass}">${item.status}</span>
+        </div>
+        ${url}
+        ${notes}
+        ${date ? `<div class="promote-card-meta">${date}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    container.querySelectorAll('.promote-card').forEach(card => {
+      card.addEventListener('click', () => openPromoteModal(card.dataset.section, card.dataset.id));
+    });
+  });
+}
+
+// ── Promote Modal ──
+let editingPromoteSection = null;
+let editingPromoteId = null;
+
+function openPromoteModal(section, id = null) {
+  editingPromoteSection = section;
+  editingPromoteId = id;
+  const cfg = promoteConfig[section];
+  const list = getPromoteList(section);
+  const item = id ? list.find(i => i.id === id) : null;
+
+  document.getElementById('promote-modal-title').placeholder = cfg.titlePlaceholder;
+  document.getElementById('promote-modal-title').value = item ? item.title : '';
+  document.getElementById('promote-modal-notes').value = item ? (item.notes || '') : '';
+  document.getElementById('promote-modal-date').value = item ? (item.date || '') : '';
+  document.getElementById('promote-modal-url').value = item ? (item.url || '') : '';
+
+  // Status options
+  const statusSel = document.getElementById('promote-modal-status');
+  statusSel.innerHTML = cfg.statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+  statusSel.value = item ? item.status : cfg.statuses[0];
+
+  // Show/hide optional fields
+  document.getElementById('promote-modal-date-wrap').style.display = cfg.showDate ? '' : 'none';
+  document.getElementById('promote-modal-url-wrap').style.display = cfg.showUrl ? '' : 'none';
+
+  document.getElementById('promote-modal-save').textContent = id ? 'Save Changes' : 'Save';
+  document.getElementById('promote-modal-delete').style.display = id ? 'inline-flex' : 'none';
+
+  document.getElementById('promote-modal').classList.add('active');
+  setTimeout(() => document.getElementById('promote-modal-title').focus(), 50);
+}
+
+function closePromoteModal() {
+  document.getElementById('promote-modal').classList.remove('active');
+  editingPromoteSection = null;
+  editingPromoteId = null;
+}
+
+document.getElementById('promote-modal-close').addEventListener('click', closePromoteModal);
+document.getElementById('promote-modal-cancel').addEventListener('click', closePromoteModal);
+document.getElementById('promote-modal').addEventListener('click', e => {
+  if (e.target.id === 'promote-modal') closePromoteModal();
+});
+
+document.getElementById('promote-modal-save').addEventListener('click', () => {
+  const title = document.getElementById('promote-modal-title').value.trim();
+  if (!title) { document.getElementById('promote-modal-title').focus(); return; }
+
+  const data = {
+    title,
+    status: document.getElementById('promote-modal-status').value,
+    notes: document.getElementById('promote-modal-notes').value.trim(),
+    date: document.getElementById('promote-modal-date').value,
+    url: document.getElementById('promote-modal-url').value.trim(),
+  };
+
+  const list = getPromoteList(editingPromoteSection);
+  if (editingPromoteId) {
+    const idx = list.findIndex(i => i.id === editingPromoteId);
+    if (idx > -1) list[idx] = { ...list[idx], ...data };
+  } else {
+    list.unshift({ id: generateId(), ...data, createdAt: Date.now() });
+  }
+  setPromoteList(editingPromoteSection, list);
+  scheduleCloudSave();
+  renderPromote();
+  closePromoteModal();
+});
+
+document.getElementById('promote-modal-delete').addEventListener('click', () => {
+  if (!editingPromoteId) return;
+  if (!confirm('Delete this item?')) return;
+  const list = getPromoteList(editingPromoteSection).filter(i => i.id !== editingPromoteId);
+  setPromoteList(editingPromoteSection, list);
+  scheduleCloudSave();
+  renderPromote();
+  closePromoteModal();
+});
+
+document.querySelectorAll('[data-promote-add]').forEach(btn => {
+  btn.addEventListener('click', () => openPromoteModal(btn.dataset.promoteAdd));
 });
 
 function showSaved(id) {

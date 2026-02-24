@@ -163,67 +163,43 @@
 
       <!-- PROMOTE TAB -->
       <section id="promote-tab" class="tab-content">
-        <div class="tab-header">
-          <h2>Promote</h2>
+
+        <!-- Events -->
+        <div class="promote-section">
+          <div class="promote-section-header">
+            <div>
+              <h2>Events</h2>
+              <p class="section-hint">IRL or virtual event ideas to grow the Substack.</p>
+            </div>
+            <button class="btn-primary" data-promote-add="events">+ Add Event</button>
+          </div>
+          <div class="promote-list" id="promote-list-events"></div>
         </div>
 
+        <!-- Cross-Post Opportunities -->
         <div class="promote-section">
-          <h3>Post-Publish Checklist</h3>
-          <p class="section-hint">Run through this every time you publish.</p>
-          <div class="checklist" id="publish-checklist">
-            <label class="check-item"><input type="checkbox"> Share to Notes on Substack</label>
-            <label class="check-item"><input type="checkbox"> Post to Instagram Stories</label>
-            <label class="check-item"><input type="checkbox"> Share excerpt to Instagram feed</label>
-            <label class="check-item"><input type="checkbox"> Post to X / Twitter</label>
-            <label class="check-item"><input type="checkbox"> Share in relevant Facebook grief groups</label>
-            <label class="check-item"><input type="checkbox"> Pin to top of profile if strong piece</label>
-            <label class="check-item"><input type="checkbox"> Send to 2–3 people personally who might relate</label>
+          <div class="promote-section-header">
+            <div>
+              <h2>Cross-Post Opportunities</h2>
+              <p class="section-hint">Grief writers on Substack to collaborate or cross-post with.</p>
+            </div>
+            <button class="btn-primary" data-promote-add="crossPosts">+ Add Writer</button>
           </div>
+          <div class="promote-list" id="promote-list-crossPosts"></div>
         </div>
 
+        <!-- Dream Collaborators -->
         <div class="promote-section">
-          <h3>Growth Strategies</h3>
-          <div class="strategy-cards">
-            <div class="strategy-card">
-              <div class="strategy-icon">🤝</div>
-              <div class="strategy-title">Cross-Promotions</div>
-              <div class="strategy-body">Recommend other grief/mental health writers on Substack. They may reciprocate. Use the Recommendations feature in your settings.</div>
+          <div class="promote-section-header">
+            <div>
+              <h2>Dream Collaborators</h2>
+              <p class="section-hint">People you'd love to feature — their mourning routine, their story.</p>
             </div>
-            <div class="strategy-card">
-              <div class="strategy-icon">📖</div>
-              <div class="strategy-title">Substack Notes</div>
-              <div class="strategy-body">Post 2–3x per week on Notes — excerpts, grief quotes, honest one-liners. Notes are the main discovery surface right now.</div>
-            </div>
-            <div class="strategy-card">
-              <div class="strategy-icon">🔁</div>
-              <div class="strategy-title">Restacks</div>
-              <div class="strategy-body">Restack posts from writers you admire with a genuine comment. This gets you seen by their audience.</div>
-            </div>
-            <div class="strategy-card">
-              <div class="strategy-icon">💬</div>
-              <div class="strategy-title">Engage in Comments</div>
-              <div class="strategy-body">Reply to every comment on your posts. Leave thoughtful comments on other grief writers' posts — your name becomes familiar.</div>
-            </div>
-            <div class="strategy-card">
-              <div class="strategy-icon">🎁</div>
-              <div class="strategy-title">Gift Subscriptions</div>
-              <div class="strategy-body">Send gift subscriptions to therapists, hospice workers, or grief counselors who might share it with clients.</div>
-            </div>
-            <div class="strategy-card">
-              <div class="strategy-icon">🔗</div>
-              <div class="strategy-title">Link in Bio</div>
-              <div class="strategy-body">Keep your Substack link prominent in all social bios. Instagram, X, LinkedIn. Use a Linktree if needed.</div>
-            </div>
+            <button class="btn-primary" data-promote-add="collaborators">+ Add Person</button>
           </div>
+          <div class="promote-list" id="promote-list-collaborators"></div>
         </div>
 
-        <div class="promote-section">
-          <div class="section-header-row">
-            <h3>My Notes on Promotion</h3>
-            <span class="autosave-label" id="promote-saved"></span>
-          </div>
-          <textarea id="promote-notes" class="big-textarea" placeholder="Track what's working, communities to try, people to reach out to, ideas for collabs..."></textarea>
-        </div>
       </section>
 
     </main>
@@ -302,6 +278,43 @@
         <div class="modal-footer-right">
           <button id="cal-modal-cancel" class="btn-secondary">Cancel</button>
           <button id="cal-modal-assign" class="btn-primary">Assign</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Promote Modal -->
+  <div class="modal" id="promote-modal">
+    <div class="modal-content modal-content-sm">
+      <button class="modal-close" id="promote-modal-close">&times;</button>
+      <div class="modal-header">
+        <input type="text" id="promote-modal-title" class="modal-title-input" placeholder="Title / Name">
+      </div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <div class="modal-field">
+            <label>Status</label>
+            <select id="promote-modal-status" class="modal-select"></select>
+          </div>
+          <div class="modal-field" id="promote-modal-date-wrap">
+            <label>Date <span class="field-hint">(optional)</span></label>
+            <input type="date" id="promote-modal-date" class="modal-input">
+          </div>
+        </div>
+        <div class="modal-field" id="promote-modal-url-wrap">
+          <label>Substack URL <span class="field-hint">(optional)</span></label>
+          <input type="url" id="promote-modal-url" class="modal-input" placeholder="https://example.substack.com">
+        </div>
+        <div class="modal-field">
+          <label>Notes</label>
+          <textarea id="promote-modal-notes" class="modal-textarea" placeholder="Details, ideas, context..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="promote-modal-delete" class="btn-delete" style="display:none;">Delete</button>
+        <div class="modal-footer-right">
+          <button id="promote-modal-cancel" class="btn-secondary">Cancel</button>
+          <button id="promote-modal-save" class="btn-primary">Save</button>
         </div>
       </div>
     </div>
