@@ -475,24 +475,6 @@ function stripHtml(html) {
 }
 
 const ARTICLE_SOURCES = {
-  guardian: {
-    label: 'The Guardian',
-    fetch: async () => {
-      const res = await fetch(
-        'https://content.guardianapis.com/search?q=grief+mourning&api-key=test&show-fields=trailText,thumbnail&order-by=newest&page-size=9'
-      );
-      if (!res.ok) throw new Error(`Guardian API error ${res.status}`);
-      const data = await res.json();
-      return data.response.results.map(r => ({
-        title: r.webTitle,
-        url: r.webUrl,
-        date: r.webPublicationDate,
-        description: r.fields?.trailText ? stripHtml(r.fields.trailText) : '',
-        section: r.sectionName,
-        source: 'The Guardian',
-      }));
-    },
-  },
   whatsyourgrief: {
     label: "What's Your Grief",
     fetch: async () => {
@@ -531,7 +513,7 @@ const ARTICLE_SOURCES = {
   },
 };
 
-let currentArticleSource = 'guardian';
+let currentArticleSource = 'whatsyourgrief';
 
 async function fetchArticles(sourceKey) {
   currentArticleSource = sourceKey;
