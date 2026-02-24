@@ -70,18 +70,7 @@
             </div>
           </div>
           <div class="ideas-header-bottom">
-            <div class="idea-counts">
-              <span id="count-idea" class="count-chip chip-idea">0 just an idea</span>
-              <span id="count-drafting" class="count-chip chip-drafting">0 drafting</span>
-              <span id="count-ready" class="count-chip chip-ready">0 ready</span>
-              <span id="count-published" class="count-chip chip-published">0 published</span>
-            </div>
             <div class="filters-row">
-              <select id="type-filter" class="filter-select">
-                <option value="all">All Types</option>
-                <option value="substack">Substack Article</option>
-                <option value="tiktok">TikTok</option>
-              </select>
               <input type="text" id="search-ideas" class="filter-search" placeholder="Search ideas...">
             </div>
           </div>
@@ -106,30 +95,65 @@
           <div id="brainstorm-results" class="brainstorm-results"></div>
         </div>
 
-        <div class="kanban-board">
-          <div class="kanban-col">
-            <div class="kanban-col-header">
-              <span class="kanban-col-title">Just an Idea</span>
+        <!-- Substack Board -->
+        <div class="board-section">
+          <div class="board-section-header">
+            <h3 class="board-section-title">Substack</h3>
+            <div class="idea-counts">
+              <span id="count-substack-idea" class="count-chip chip-idea">0 just an idea</span>
+              <span id="count-substack-drafting" class="count-chip chip-drafting">0 drafting</span>
+              <span id="count-substack-ready" class="count-chip chip-ready">0 ready</span>
+              <span id="count-substack-published" class="count-chip chip-published">0 published</span>
             </div>
-            <div class="kanban-col-body" id="col-idea" data-status="idea"></div>
           </div>
-          <div class="kanban-col">
-            <div class="kanban-col-header">
-              <span class="kanban-col-title">Drafting</span>
+          <div class="kanban-board">
+            <div class="kanban-col">
+              <div class="kanban-col-header"><span class="kanban-col-title">Just an Idea</span></div>
+              <div class="kanban-col-body" id="col-substack-idea" data-status="idea" data-type="substack"></div>
             </div>
-            <div class="kanban-col-body" id="col-drafting" data-status="drafting"></div>
+            <div class="kanban-col">
+              <div class="kanban-col-header"><span class="kanban-col-title">Drafting</span></div>
+              <div class="kanban-col-body" id="col-substack-drafting" data-status="drafting" data-type="substack"></div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-header"><span class="kanban-col-title">Ready</span></div>
+              <div class="kanban-col-body" id="col-substack-ready" data-status="ready" data-type="substack"></div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-header"><span class="kanban-col-title">Published</span></div>
+              <div class="kanban-col-body" id="col-substack-published" data-status="published" data-type="substack"></div>
+            </div>
           </div>
-          <div class="kanban-col">
-            <div class="kanban-col-header">
-              <span class="kanban-col-title">Ready</span>
+        </div>
+
+        <!-- TikTok Board -->
+        <div class="board-section">
+          <div class="board-section-header">
+            <h3 class="board-section-title">TikTok</h3>
+            <div class="idea-counts">
+              <span id="count-tiktok-idea" class="count-chip chip-idea">0 just an idea</span>
+              <span id="count-tiktok-drafting" class="count-chip chip-drafting">0 drafting</span>
+              <span id="count-tiktok-ready" class="count-chip chip-ready">0 ready</span>
+              <span id="count-tiktok-published" class="count-chip chip-published">0 published</span>
             </div>
-            <div class="kanban-col-body" id="col-ready" data-status="ready"></div>
           </div>
-          <div class="kanban-col">
-            <div class="kanban-col-header">
-              <span class="kanban-col-title">Published</span>
+          <div class="kanban-board">
+            <div class="kanban-col">
+              <div class="kanban-col-header"><span class="kanban-col-title">Just an Idea</span></div>
+              <div class="kanban-col-body" id="col-tiktok-idea" data-status="idea" data-type="tiktok"></div>
             </div>
-            <div class="kanban-col-body" id="col-published" data-status="published"></div>
+            <div class="kanban-col">
+              <div class="kanban-col-header"><span class="kanban-col-title">Drafting</span></div>
+              <div class="kanban-col-body" id="col-tiktok-drafting" data-status="drafting" data-type="tiktok"></div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-header"><span class="kanban-col-title">Ready</span></div>
+              <div class="kanban-col-body" id="col-tiktok-ready" data-status="ready" data-type="tiktok"></div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-header"><span class="kanban-col-title">Published</span></div>
+              <div class="kanban-col-body" id="col-tiktok-published" data-status="published" data-type="tiktok"></div>
+            </div>
           </div>
         </div>
       </section>

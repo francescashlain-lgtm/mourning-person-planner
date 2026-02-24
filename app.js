@@ -79,86 +79,94 @@ const STATUSES = ['idea', 'drafting', 'ready', 'published'];
 const typeLabel = { substack: 'Substack', tiktok: 'TikTok' };
 
 function renderIdeas() {
-  const typeFilter = document.getElementById('type-filter').value;
   const search = document.getElementById('search-ideas').value.toLowerCase();
 
-  let filtered = [...ideas];
-  if (typeFilter !== 'all') filtered = filtered.filter(i => (i.type || 'substack') === typeFilter);
-  if (search) filtered = filtered.filter(i =>
-    i.title.toLowerCase().includes(search) ||
-    (i.notes || '').toLowerCase().includes(search)
-  );
+  // Update count chips per board type
+  const counts = {
+    substack: { idea: 0, drafting: 0, ready: 0, published: 0 },
+    tiktok:   { idea: 0, drafting: 0, ready: 0, published: 0 },
+  };
+  ideas.forEach(i => {
+    const t = i.type || 'substack';
+    if (counts[t] && counts[t][i.status] !== undefined) counts[t][i.status]++;
+  });
+  ['substack', 'tiktok'].forEach(type => {
+    document.getElementById(`count-${type}-idea`).textContent = `${counts[type].idea} just an idea`;
+    document.getElementById(`count-${type}-drafting`).textContent = `${counts[type].drafting} drafting`;
+    document.getElementById(`count-${type}-ready`).textContent = `${counts[type].ready} ready`;
+    document.getElementById(`count-${type}-published`).textContent = `${counts[type].published} published`;
+  });
 
-  // Update count chips
-  const counts = { idea: 0, drafting: 0, ready: 0, published: 0 };
-  ideas.forEach(i => { if (counts[i.status] !== undefined) counts[i.status]++; });
-  document.getElementById('count-idea').textContent = `${counts.idea} just an idea`;
-  document.getElementById('count-drafting').textContent = `${counts.drafting} drafting`;
-  document.getElementById('count-ready').textContent = `${counts.ready} ready`;
-  document.getElementById('count-published').textContent = `${counts.published} published`;
+  // Render each board
+  ['substack', 'tiktok'].forEach(type => {
+    let filtered = ideas.filter(i => (i.type || 'substack') === type);
+    if (search) filtered = filtered.filter(i =>
+      i.title.toLowerCase().includes(search) ||
+      (i.notes || '').toLowerCase().includes(search)
+    );
 
-  // Render each column
-  STATUSES.forEach(status => {
-    const col = document.getElementById(`col-${status}`);
-    const colIdeas = filtered
-      .filter(i => i.status === status)
-      .sort((a, b) => {
-        if (a.publishDate && b.publishDate) return a.publishDate.localeCompare(b.publishDate);
-        if (a.publishDate) return -1;
-        if (b.publishDate) return 1;
-        return b.createdAt - a.createdAt;
-      });
+    STATUSES.forEach(status => {
+      const col = document.getElementById(`col-${type}-${status}`);
+      const colIdeas = filtered
+        .filter(i => i.status === status)
+        .sort((a, b) => {
+          if (a.publishDate && b.publishDate) return a.publishDate.localeCompare(b.publishDate);
+          if (a.publishDate) return -1;
+          if (b.publishDate) return 1;
+          return b.createdAt - a.createdAt;
+        });
 
-    if (colIdeas.length === 0) {
-      col.innerHTML = `<div class="kanban-empty">Drop ideas here</div>`;
-    } else {
-      col.innerHTML = colIdeas.map(idea => {
-        const date = idea.publishDate ? `📅 ${formatDate(idea.publishDate)}` : '';
-        const type = typeLabel[idea.type || 'substack'];
-        const notes = idea.notes ? `<div class="idea-card-notes">${escapeHtml(idea.notes)}</div>` : '';
-        const pillar = idea.pillar ? `<div class="idea-card-series">${escapeHtml(idea.pillar)}</div>` : '';
-        return `
-        <div class="idea-card" data-id="${idea.id}" draggable="true">
-          <div class="idea-card-type">${type}</div>
-          <div class="idea-card-title">${escapeHtml(idea.title)}</div>
-          ${pillar}
-          ${notes}
-          ${date ? `<div class="idea-card-meta">${date}</div>` : ''}
-        </div>`;
-      }).join('');
-    }
-
-    // Click to edit
-    col.querySelectorAll('.idea-card').forEach(card => {
-      card.addEventListener('click', () => openIdeaModal(card.dataset.id));
-    });
-
-    // Drag events on cards
-    col.querySelectorAll('.idea-card').forEach(card => {
-      card.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', card.dataset.id);
-        card.classList.add('dragging');
-      });
-      card.addEventListener('dragend', () => card.classList.remove('dragging'));
-    });
-
-    // Drop events on column
-    col.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      col.classList.add('drag-over');
-    });
-    col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
-    col.addEventListener('drop', (e) => {
-      e.preventDefault();
-      col.classList.remove('drag-over');
-      const id = e.dataTransfer.getData('text/plain');
-      const idx = ideas.findIndex(i => i.id === id);
-      if (idx > -1 && ideas[idx].status !== status) {
-        ideas[idx].status = status;
-        scheduleCloudSave();
-        renderIdeas();
-        renderCalendar();
+      if (colIdeas.length === 0) {
+        col.innerHTML = `<div class="kanban-empty">Drop ideas here</div>`;
+      } else {
+        col.innerHTML = colIdeas.map(idea => {
+          const date = idea.publishDate ? `📅 ${formatDate(idea.publishDate)}` : '';
+          const notes = idea.notes ? `<div class="idea-card-notes">${escapeHtml(idea.notes)}</div>` : '';
+          const pillar = idea.pillar ? `<div class="idea-card-series">${escapeHtml(idea.pillar)}</div>` : '';
+          const format = idea.format ? `<span class="idea-card-format">${escapeHtml(idea.format)}</span>` : '';
+          return `
+          <div class="idea-card" data-id="${idea.id}" draggable="true">
+            ${format}
+            <div class="idea-card-title">${escapeHtml(idea.title)}</div>
+            ${pillar}
+            ${notes}
+            ${date ? `<div class="idea-card-meta">${date}</div>` : ''}
+          </div>`;
+        }).join('');
       }
+
+      // Click to edit
+      col.querySelectorAll('.idea-card').forEach(card => {
+        card.addEventListener('click', () => openIdeaModal(card.dataset.id));
+      });
+
+      // Drag events on cards
+      col.querySelectorAll('.idea-card').forEach(card => {
+        card.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', card.dataset.id);
+          card.classList.add('dragging');
+        });
+        card.addEventListener('dragend', () => card.classList.remove('dragging'));
+      });
+
+      // Drop events on column
+      col.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        col.classList.add('drag-over');
+      });
+      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+      col.addEventListener('drop', (e) => {
+        e.preventDefault();
+        col.classList.remove('drag-over');
+        const id = e.dataTransfer.getData('text/plain');
+        const idx = ideas.findIndex(i => i.id === id);
+        if (idx > -1 && ideas[idx].status !== status) {
+          ideas[idx].status = status;
+          scheduleCloudSave();
+          renderIdeas();
+          renderCalendar();
+        }
+      });
     });
   });
 }
@@ -271,7 +279,6 @@ document.querySelectorAll('.format-pill').forEach(pill => {
 });
 
 // ── Filters ──
-document.getElementById('type-filter').addEventListener('change', renderIdeas);
 document.getElementById('search-ideas').addEventListener('input', renderIdeas);
 
 // ── Calendar ──
