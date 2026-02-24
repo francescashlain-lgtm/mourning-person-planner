@@ -497,7 +497,7 @@ const ARTICLE_SOURCES = {
     label: "What's Your Grief",
     fetch: async () => {
       const rssUrl = encodeURIComponent('https://whatsyourgrief.com/feed/');
-      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}&count=9`);
+      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
       if (!res.ok) throw new Error('Feed error');
       const data = await res.json();
       if (data.status !== 'ok') throw new Error('Feed unavailable');
@@ -515,7 +515,7 @@ const ARTICLE_SOURCES = {
     label: 'Modern Loss',
     fetch: async () => {
       const rssUrl = encodeURIComponent('https://modernloss.com/feed/');
-      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}&count=9`);
+      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
       if (!res.ok) throw new Error('Feed error');
       const data = await res.json();
       if (data.status !== 'ok') throw new Error('Feed unavailable');
