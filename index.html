@@ -136,70 +136,46 @@
 
       <!-- TRENDING TAB -->
       <section id="trending-tab" class="tab-content">
-        <div class="tab-header">
-          <h2>Trending</h2>
-        </div>
 
-        <div class="trending-links">
-          <h3>Substack Discovery</h3>
-          <div class="link-cards">
-            <a href="https://substack.com/discover" target="_blank" class="link-card">
-              <span class="link-card-icon">🔍</span>
-              <div>
-                <div class="link-card-title">Discover</div>
-                <div class="link-card-sub">Browse trending publications</div>
-              </div>
-            </a>
-            <a href="https://substack.com/notes" target="_blank" class="link-card">
-              <span class="link-card-icon">📝</span>
-              <div>
-                <div class="link-card-title">Notes</div>
-                <div class="link-card-sub">See what's being shared right now</div>
-              </div>
-            </a>
-            <a href="https://substack.com/inbox" target="_blank" class="link-card">
-              <span class="link-card-icon">📬</span>
-              <div>
-                <div class="link-card-title">Inbox</div>
-                <div class="link-card-sub">See what other writers are publishing</div>
-              </div>
-            </a>
-            <a href="https://mourningperson.substack.com/dashboard" target="_blank" class="link-card">
-              <span class="link-card-icon">📊</span>
-              <div>
-                <div class="link-card-title">Your Dashboard</div>
-                <div class="link-card-sub">Stats, subscribers, growth</div>
-              </div>
-            </a>
+        <!-- Reddit -->
+        <div class="trending-section">
+          <div class="trending-section-header">
+            <div class="trending-section-left">
+              <h2>What Grief Communities Are Talking About</h2>
+              <p class="section-hint">Live posts from Reddit grief communities — updated each time you visit.</p>
+            </div>
+            <button id="reddit-refresh" class="btn-secondary">↻ Refresh</button>
+          </div>
+
+          <div class="reddit-subreddit-tabs">
+            <button class="subreddit-tab active" data-sub="GriefSupport">r/GriefSupport</button>
+            <button class="subreddit-tab" data-sub="grief">r/grief</button>
+            <button class="subreddit-tab" data-sub="widowers">r/widowers</button>
+          </div>
+
+          <div id="reddit-posts" class="reddit-posts">
+            <div class="reddit-loading">Loading posts...</div>
           </div>
         </div>
 
-        <div class="trending-notes-section">
-          <div class="section-header-row">
-            <h3>What I'm Noticing</h3>
-            <span class="autosave-label" id="trending-saved"></span>
+        <!-- Google Trends -->
+        <div class="trending-section">
+          <div class="trending-section-header">
+            <div class="trending-section-left">
+              <h2>Search Trends</h2>
+              <p class="section-hint">How often people search grief-related terms — US, past 12 months.</p>
+            </div>
+            <a href="https://trends.google.com/trends/explore?q=grief,mourning,loss&geo=US&date=today%2012-m" target="_blank" class="btn-secondary">Open in Google Trends ↗</a>
           </div>
-          <p class="section-hint">Jot down trends, recurring grief topics, things resonating on social, angles worth exploring.</p>
-          <textarea id="trending-notes" class="big-textarea" placeholder="e.g. People responding a lot to 'permission' framing — giving people permission to grieve publicly. Also seeing anniversary content trending around holidays..."></textarea>
+          <div class="trends-embed-wrap">
+            <iframe id="trends-iframe" class="trends-iframe"
+              src="https://trends.google.com/trends/embed/explore/TIMESERIES?req=%7B%22comparisonItem%22%3A%5B%7B%22keyword%22%3A%22grief%22%2C%22geo%22%3A%22US%22%2C%22time%22%3A%22today%2012-m%22%7D%2C%7B%22keyword%22%3A%22mourning%22%2C%22geo%22%3A%22US%22%2C%22time%22%3A%22today%2012-m%22%7D%2C%7B%22keyword%22%3A%22bereavement%22%2C%22geo%22%3A%22US%22%2C%22time%22%3A%22today%2012-m%22%7D%5D%2C%22category%22%3A0%2C%22property%22%3A%22%22%7D&tz=300&hl=en-US"
+              frameborder="0"
+              scrolling="0">
+            </iframe>
+          </div>
         </div>
 
-        <div class="trending-notes-section">
-          <div class="section-header-row">
-            <h3>Recurring Themes to Revisit</h3>
-          </div>
-          <div class="theme-chips">
-            <span class="theme-chip">First anniversaries</span>
-            <span class="theme-chip">Grief in the body</span>
-            <span class="theme-chip">Grief & identity</span>
-            <span class="theme-chip">Supporting others</span>
-            <span class="theme-chip">Grief timelines</span>
-            <span class="theme-chip">Holiday grief</span>
-            <span class="theme-chip">Unexpected triggers</span>
-            <span class="theme-chip">Grief & joy coexisting</span>
-            <span class="theme-chip">Letters to the lost</span>
-            <span class="theme-chip">The language of loss</span>
-          </div>
-        </div>
       </section>
 
       <!-- PROMOTE TAB -->

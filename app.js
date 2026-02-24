@@ -7,7 +7,6 @@ import {
 
 // ── State ──
 let ideas = [];
-let trendingNotes = '';
 let promoteNotes = '';
 let calendarDate = new Date(); // month currently shown
 
@@ -17,13 +16,12 @@ let saveTimer = null;
 function scheduleCloudSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    saveToCloud({ ideas, trendingNotes, promoteNotes });
+    saveToCloud({ ideas, promoteNotes });
   }, 1200);
 }
 
 window.onCloudDataReceived = function(data) {
   if (data.ideas) ideas = data.ideas;
-  if (data.trendingNotes !== undefined) trendingNotes = data.trendingNotes;
   if (data.promoteNotes !== undefined) promoteNotes = data.promoteNotes;
   renderAll();
 };
@@ -60,6 +58,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById(`${tab}-tab`).classList.add('active');
     if (tab === 'calendar') renderCalendar();
+    if (tab === 'trending') fetchReddit(currentSubreddit);
   });
 });
 
@@ -159,7 +158,6 @@ function renderIdeas() {
 function renderAll() {
   renderIdeas();
   renderCalendar();
-  document.getElementById('trending-notes').value = trendingNotes;
   document.getElementById('promote-notes').value = promoteNotes;
 }
 
@@ -386,23 +384,74 @@ document.getElementById('cal-modal-assign').addEventListener('click', () => {
   closeCalModal();
 });
 
-// ── Trending & Promote notes ──
-let trendingTimer = null;
-document.getElementById('trending-notes').addEventListener('input', (e) => {
-  trendingNotes = e.target.value;
-  clearTimeout(trendingTimer);
-  trendingTimer = setTimeout(() => {
-    saveToCloud({ ideas, trendingNotes, promoteNotes });
-    showSaved('trending-saved');
-  }, 1500);
+// ── Reddit ──
+let currentSubreddit = 'GriefSupport';
+
+async function fetchReddit(sub) {
+  const container = document.getElementById('reddit-posts');
+  container.innerHTML = `<div class="reddit-loading">Loading r/${sub}...</div>`;
+  try {
+    const res = await fetch(`https://www.reddit.com/r/${sub}/hot.json?limit=9&raw_json=1`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error('Failed to fetch');
+    const data = await res.json();
+    const posts = data.data.children.map(c => c.data).filter(p => !p.stickied);
+    renderRedditPosts(posts);
+  } catch (e) {
+    container.innerHTML = `<div class="reddit-error">Could not load posts. <a href="https://www.reddit.com/r/${sub}/hot/" target="_blank">Open Reddit directly ↗</a></div>`;
+  }
+}
+
+function renderRedditPosts(posts) {
+  const container = document.getElementById('reddit-posts');
+  if (!posts.length) {
+    container.innerHTML = `<div class="reddit-error">No posts found.</div>`;
+    return;
+  }
+  container.innerHTML = posts.map(p => {
+    const age = timeAgo(p.created_utc);
+    const flair = p.link_flair_text ? `<span class="reddit-flair">${escapeHtml(p.link_flair_text)}</span>` : '';
+    return `
+    <a class="reddit-card" href="https://www.reddit.com${p.permalink}" target="_blank">
+      ${flair}
+      <div class="reddit-card-title">${escapeHtml(p.title)}</div>
+      <div class="reddit-card-meta">
+        <span>▲ ${p.score.toLocaleString()}</span>
+        <span>💬 ${p.num_comments.toLocaleString()}</span>
+        <span>${age}</span>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+function timeAgo(utc) {
+  const diff = Math.floor(Date.now() / 1000) - utc;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+document.querySelectorAll('.subreddit-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.subreddit-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentSubreddit = btn.dataset.sub;
+    fetchReddit(currentSubreddit);
+  });
 });
 
+document.getElementById('reddit-refresh').addEventListener('click', () => {
+  fetchReddit(currentSubreddit);
+});
+
+// ── Promote notes ──
 let promoteTimer = null;
 document.getElementById('promote-notes').addEventListener('input', (e) => {
   promoteNotes = e.target.value;
   clearTimeout(promoteTimer);
   promoteTimer = setTimeout(() => {
-    saveToCloud({ ideas, trendingNotes, promoteNotes });
+    saveToCloud({ ideas, promoteNotes });
     showSaved('promote-saved');
   }, 1500);
 });
