@@ -511,6 +511,24 @@ const ARTICLE_SOURCES = {
       }));
     },
   },
+  endwell: {
+    label: 'End Well',
+    fetch: async () => {
+      const rssUrl = encodeURIComponent('https://endwellproject.org/?feed=rss2&post_type=blog');
+      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
+      if (!res.ok) throw new Error('Feed error');
+      const data = await res.json();
+      if (data.status !== 'ok') throw new Error('Feed unavailable');
+      return data.items.map(item => ({
+        title: item.title,
+        url: item.link,
+        date: item.pubDate,
+        description: stripHtml(item.description || '').slice(0, 220),
+        section: null,
+        source: 'End Well',
+      }));
+    },
+  },
 };
 
 let currentArticleSource = 'whatsyourgrief';
