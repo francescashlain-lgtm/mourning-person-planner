@@ -738,6 +738,16 @@ body {
   margin-top: auto;
 }
 
+.article-card-desc {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .reddit-loading, .reddit-error {
   grid-column: 1/-1;
   text-align: center;

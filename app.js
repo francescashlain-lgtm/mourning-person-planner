@@ -64,7 +64,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById(`${tab}-tab`).classList.add('active');
     if (tab === 'calendar') renderCalendar();
-    if (tab === 'trending') fetchReddit(currentSubreddit);
+    if (tab === 'trending') { fetchReddit(currentSubreddit); fetchArticles(currentArticleSource); }
     if (tab === 'promote') renderPromote();
     if (tab === 'merch') renderMerch();
   });
@@ -465,6 +465,124 @@ document.querySelectorAll('.subreddit-tab').forEach(btn => {
 
 document.getElementById('reddit-refresh').addEventListener('click', () => {
   fetchReddit(currentSubreddit);
+});
+
+// ── Articles ──
+function stripHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return (div.textContent || div.innerText || '').trim();
+}
+
+const ARTICLE_SOURCES = {
+  guardian: {
+    label: 'The Guardian',
+    fetch: async () => {
+      const res = await fetch(
+        'https://content.guardianapis.com/search?q=grief+mourning&api-key=test&show-fields=trailText,thumbnail&order-by=newest&page-size=9'
+      );
+      if (!res.ok) throw new Error(`Guardian API error ${res.status}`);
+      const data = await res.json();
+      return data.response.results.map(r => ({
+        title: r.webTitle,
+        url: r.webUrl,
+        date: r.webPublicationDate,
+        description: r.fields?.trailText ? stripHtml(r.fields.trailText) : '',
+        section: r.sectionName,
+        source: 'The Guardian',
+      }));
+    },
+  },
+  whatsyourgrief: {
+    label: "What's Your Grief",
+    fetch: async () => {
+      const rssUrl = encodeURIComponent('https://whatsyourgrief.com/feed/');
+      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}&count=9`);
+      if (!res.ok) throw new Error('Feed error');
+      const data = await res.json();
+      if (data.status !== 'ok') throw new Error('Feed unavailable');
+      return data.items.map(item => ({
+        title: item.title,
+        url: item.link,
+        date: item.pubDate,
+        description: stripHtml(item.description || '').slice(0, 220),
+        section: null,
+        source: "What's Your Grief",
+      }));
+    },
+  },
+  modernloss: {
+    label: 'Modern Loss',
+    fetch: async () => {
+      const rssUrl = encodeURIComponent('https://modernloss.com/feed/');
+      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}&count=9`);
+      if (!res.ok) throw new Error('Feed error');
+      const data = await res.json();
+      if (data.status !== 'ok') throw new Error('Feed unavailable');
+      return data.items.map(item => ({
+        title: item.title,
+        url: item.link,
+        date: item.pubDate,
+        description: stripHtml(item.description || '').slice(0, 220),
+        section: null,
+        source: 'Modern Loss',
+      }));
+    },
+  },
+};
+
+let currentArticleSource = 'guardian';
+
+async function fetchArticles(sourceKey) {
+  currentArticleSource = sourceKey;
+  const container = document.getElementById('article-posts');
+  container.innerHTML = `<div class="reddit-loading">Loading articles...</div>`;
+  try {
+    const articles = await ARTICLE_SOURCES[sourceKey].fetch();
+    renderArticles(articles);
+  } catch (e) {
+    const label = ARTICLE_SOURCES[sourceKey]?.label || sourceKey;
+    container.innerHTML = `<div class="reddit-error">Could not load ${label}. <a href="#" id="article-retry">Try again ↗</a></div>`;
+    document.getElementById('article-retry')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      fetchArticles(sourceKey);
+    });
+  }
+}
+
+function renderArticles(articles) {
+  const container = document.getElementById('article-posts');
+  if (!articles.length) {
+    container.innerHTML = '<div class="reddit-error">No articles found.</div>';
+    return;
+  }
+  container.innerHTML = articles.map(a => {
+    const date = a.date ? new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    const flair = a.section ? `<span class="reddit-flair">${escapeHtml(a.section)}</span>` : '';
+    const desc = a.description ? `<p class="article-card-desc">${escapeHtml(a.description)}${a.description.length >= 220 ? '…' : ''}</p>` : '';
+    return `
+    <a class="reddit-card" href="${a.url}" target="_blank" rel="noopener">
+      ${flair}
+      <div class="reddit-card-title">${escapeHtml(a.title)}</div>
+      ${desc}
+      <div class="reddit-card-meta">
+        <span>${escapeHtml(a.source)}</span>
+        ${date ? `<span>${date}</span>` : ''}
+      </div>
+    </a>`;
+  }).join('');
+}
+
+document.querySelectorAll('.article-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.article-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    fetchArticles(btn.dataset.source);
+  });
+});
+
+document.getElementById('articles-refresh').addEventListener('click', () => {
+  fetchArticles(currentArticleSource);
 });
 
 // ── Promote ──
