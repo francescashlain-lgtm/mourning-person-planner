@@ -171,15 +171,15 @@ let editingIdeaId = null;
 
 document.getElementById('new-idea-btn').addEventListener('click', () => openIdeaModal(null));
 
-function openIdeaModal(id) {
+function openIdeaModal(id, prefill = null) {
   editingIdeaId = id;
   const idea = id ? ideas.find(i => i.id === id) : null;
   const modal = document.getElementById('idea-modal');
 
-  document.getElementById('modal-title').value = idea ? idea.title : '';
-  document.getElementById('modal-type').value = idea ? (idea.type || 'substack') : 'substack';
+  document.getElementById('modal-title').value = prefill?.title || (idea ? idea.title : '');
+  document.getElementById('modal-type').value = prefill?.type || (idea ? (idea.type || 'substack') : 'substack');
   document.getElementById('modal-status').value = idea ? idea.status : 'idea';
-  document.getElementById('modal-pillar').value = idea ? (idea.pillar || '') : '';
+  document.getElementById('modal-pillar').value = prefill?.pillar || (idea ? (idea.pillar || '') : '');
   document.getElementById('modal-date').value = idea ? (idea.publishDate || '') : '';
   document.getElementById('modal-notes').value = idea ? (idea.notes || '') : '';
 
@@ -649,6 +649,147 @@ function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// ── Brainstorm ──
+const BRAINSTORM_KEY_STORE = 'mp_anthropic_key';
+
+function getBrainstormKey() { return localStorage.getItem(BRAINSTORM_KEY_STORE); }
+function saveBrainstormKey(k) { localStorage.setItem(BRAINSTORM_KEY_STORE, k); }
+
+document.getElementById('brainstorm-toggle').addEventListener('click', () => {
+  const panel = document.getElementById('brainstorm-panel');
+  const btn = document.getElementById('brainstorm-toggle');
+  const open = panel.style.display === 'none' || panel.style.display === '';
+  panel.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '✕ Close' : '✦ Brainstorm';
+  if (open) {
+    const hasKey = !!getBrainstormKey();
+    document.getElementById('brainstorm-setup').style.display = hasKey ? 'none' : 'block';
+    document.getElementById('brainstorm-form').style.display = hasKey ? 'block' : 'none';
+  }
+});
+
+document.getElementById('brainstorm-key-save').addEventListener('click', () => {
+  const key = document.getElementById('brainstorm-key-input').value.trim();
+  if (!key) return;
+  saveBrainstormKey(key);
+  document.getElementById('brainstorm-key-input').value = '';
+  document.getElementById('brainstorm-setup').style.display = 'none';
+  document.getElementById('brainstorm-form').style.display = 'block';
+});
+
+document.getElementById('brainstorm-key-change').addEventListener('click', () => {
+  document.getElementById('brainstorm-setup').style.display = 'block';
+  document.getElementById('brainstorm-form').style.display = 'none';
+});
+
+document.getElementById('brainstorm-generate').addEventListener('click', fetchBrainstorm);
+
+async function fetchBrainstorm() {
+  const key = getBrainstormKey();
+  if (!key) return;
+
+  const pillar = document.getElementById('brainstorm-pillar').value;
+  const context = document.getElementById('brainstorm-context').value.trim();
+  const btn = document.getElementById('brainstorm-generate');
+  const results = document.getElementById('brainstorm-results');
+
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  results.innerHTML = '<div class="brainstorm-loading">Thinking of ideas...</div>';
+
+  const prompt = `You are an editorial assistant for "Mourning Person," a grief-focused Substack by Frankie Shlain. The publication has a modern, honest, intimate voice — specific and raw, never clinical or overly sentimental.
+
+Content pillars:
+- CRYING AND CRAFTING: grief-adjacent creative projects and activities
+- GRIEVER'S GUIDE TO:: practical guides for navigating specific grief moments (first holidays, clearing belongings, etc.)
+- GRIEF IN CULTURE: how grief appears in media, food, art, pop culture — analyzed with a personal lens
+- MOURNING ROUTINE: the writer's personal morning/mourning rituals and daily life with grief
+- RECIPES FOR GRIEF: cooking from her late mother's handwritten recipe cards — dishes she never ate before, meeting a side of her mother she didn't know through food
+${pillar ? `\nFocus ideas on the "${pillar}" pillar.` : ''}${context ? `\nWriter's current context: ${context}` : ''}
+
+Generate 8 specific, compelling article or TikTok video ideas. Make titles strong and evocative — specific, not generic. Include a mix of Substack articles and TikToks.
+
+Return ONLY a valid JSON array, no other text:
+[{"title": "...", "type": "substack", "notes": "One sentence on angle or hook"}, ...]
+type must be "substack" or "tiktok".`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1400,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        localStorage.removeItem(BRAINSTORM_KEY_STORE);
+        document.getElementById('brainstorm-setup').style.display = 'block';
+        document.getElementById('brainstorm-form').style.display = 'none';
+        throw new Error('Invalid API key — please re-enter it above.');
+      }
+      throw new Error(err.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.content[0].text.trim();
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error('Unexpected response format.');
+    const generated = JSON.parse(jsonMatch[0]);
+    renderBrainstormResults(generated, pillar);
+
+  } catch (e) {
+    results.innerHTML = `<div class="brainstorm-error">${escapeHtml(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✦ Generate Ideas';
+  }
+}
+
+function renderBrainstormResults(generated, pillar) {
+  const results = document.getElementById('brainstorm-results');
+  if (!generated.length) {
+    results.innerHTML = '<div class="brainstorm-error">No ideas returned — try adding more context.</div>';
+    return;
+  }
+  results.innerHTML = `
+    <div class="brainstorm-results-header">
+      <span>${generated.length} ideas generated</span>
+      <span class="brainstorm-hint">Click "+ Add" to send an idea to your board</span>
+    </div>
+    <div class="brainstorm-grid">
+      ${generated.map((idea, i) => `
+        <div class="brainstorm-card">
+          <div class="brainstorm-card-type">${typeLabel[idea.type] || 'Substack'}</div>
+          <div class="brainstorm-card-title">${escapeHtml(idea.title)}</div>
+          ${idea.notes ? `<div class="brainstorm-card-notes">${escapeHtml(idea.notes)}</div>` : ''}
+          <button class="brainstorm-card-add"
+            data-title="${escapeHtml(idea.title)}"
+            data-type="${idea.type || 'substack'}"
+            data-pillar="${escapeHtml(pillar)}">+ Add to Ideas</button>
+        </div>`).join('')}
+    </div>`;
+
+  results.querySelectorAll('.brainstorm-card-add').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openIdeaModal(null, {
+        title: btn.dataset.title,
+        type: btn.dataset.type,
+        pillar: btn.dataset.pillar,
+      });
+    });
+  });
 }
 
 // ── Init ──

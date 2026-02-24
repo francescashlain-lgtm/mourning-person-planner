@@ -63,7 +63,10 @@
         <div class="tab-header ideas-tab-header">
           <div class="ideas-header-top">
             <h2>Ideas</h2>
-            <button id="new-idea-btn" class="btn-primary">+ New Idea</button>
+            <div class="ideas-header-actions">
+              <button id="brainstorm-toggle" class="btn-secondary">✦ Brainstorm</button>
+              <button id="new-idea-btn" class="btn-primary">+ New Idea</button>
+            </div>
           </div>
           <div class="ideas-header-bottom">
             <div class="idea-counts">
@@ -81,6 +84,33 @@
               <input type="text" id="search-ideas" class="filter-search" placeholder="Search ideas...">
             </div>
           </div>
+        </div>
+
+        <!-- Brainstorm Panel -->
+        <div id="brainstorm-panel" class="brainstorm-panel" style="display:none;">
+          <div id="brainstorm-setup" class="brainstorm-setup">
+            <p class="brainstorm-setup-text">Enter your Anthropic API key to use AI brainstorming. Saved only in your browser — never stored on any server.</p>
+            <div class="brainstorm-api-row">
+              <input type="password" id="brainstorm-key-input" class="modal-input" placeholder="sk-ant-api...">
+              <button id="brainstorm-key-save" class="btn-primary">Save Key</button>
+            </div>
+          </div>
+          <div id="brainstorm-form" class="brainstorm-form" style="display:none;">
+            <div class="brainstorm-fields">
+              <select id="brainstorm-pillar" class="filter-select">
+                <option value="">Any pillar</option>
+                <option value="CRYING AND CRAFTING">CRYING AND CRAFTING</option>
+                <option value="GRIEVER'S GUIDE TO:">GRIEVER'S GUIDE TO:</option>
+                <option value="GRIEF IN CULTURE">GRIEF IN CULTURE</option>
+                <option value="MOURNING ROUTINE">MOURNING ROUTINE</option>
+                <option value="RECIPES FOR GRIEF">RECIPES FOR GRIEF</option>
+              </select>
+              <button id="brainstorm-generate" class="btn-primary">✦ Generate Ideas</button>
+              <button id="brainstorm-key-change" class="btn-icon-sm" title="Change API key">⚙</button>
+            </div>
+            <textarea id="brainstorm-context" class="brainstorm-context-input" placeholder="What are you thinking about, feeling, or exploring lately? (optional — more context = better ideas)"></textarea>
+          </div>
+          <div id="brainstorm-results" class="brainstorm-results"></div>
         </div>
 
         <div class="kanban-board">
@@ -243,6 +273,7 @@
               <option value="GRIEVER'S GUIDE TO:">GRIEVER'S GUIDE TO:</option>
               <option value="GRIEF IN CULTURE">GRIEF IN CULTURE</option>
               <option value="MOURNING ROUTINE">MOURNING ROUTINE</option>
+              <option value="RECIPES FOR GRIEF">RECIPES FOR GRIEF</option>
             </select>
           </div>
           <div class="modal-field">
