@@ -1412,6 +1412,17 @@ body {
   }
   .ideas-header-bottom { flex-direction: column; align-items: flex-start; }
 
+  #trending-tab .trending-section { display: none; }
+  #trending-tab::before {
+    content: 'Trending is only available on desktop.';
+    display: block;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+
   .calendar-grid { font-size: 0.7rem; }
   .cal-day { min-height: 55px; padding: 0.25rem; }
   .cal-event { font-size: 0.55rem; }
