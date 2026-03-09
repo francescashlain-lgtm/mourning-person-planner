@@ -449,38 +449,36 @@ async function fetchReddit(sub) {
   const container = document.getElementById('reddit-posts');
   container.innerHTML = `<div class="reddit-loading">Loading r/${sub}...</div>`;
   try {
-    const res = await fetch(`https://www.reddit.com/r/${sub}/hot.json?limit=9&raw_json=1`, {
-      headers: { 'Accept': 'application/json' }
-    });
+    const rssUrl = encodeURIComponent(`https://www.reddit.com/r/${sub}/hot.rss`);
+    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}&count=9`);
     if (!res.ok) throw new Error('Failed to fetch');
     const data = await res.json();
-    const posts = data.data.children.map(c => c.data).filter(p => !p.stickied);
-    renderRedditPosts(posts);
+    if (data.status !== 'ok') throw new Error('Feed unavailable');
+    const posts = data.items.map(item => ({
+      title: item.title,
+      url: item.link,
+      age: timeAgo(new Date(item.pubDate).getTime() / 1000),
+    }));
+    renderRedditPosts(posts, sub);
   } catch (e) {
     container.innerHTML = `<div class="reddit-error">Could not load posts. <a href="https://www.reddit.com/r/${sub}/hot/" target="_blank">Open Reddit directly ↗</a></div>`;
   }
 }
 
-function renderRedditPosts(posts) {
+function renderRedditPosts(posts, sub) {
   const container = document.getElementById('reddit-posts');
   if (!posts.length) {
     container.innerHTML = `<div class="reddit-error">No posts found.</div>`;
     return;
   }
-  container.innerHTML = posts.map(p => {
-    const age = timeAgo(p.created_utc);
-    const flair = p.link_flair_text ? `<span class="reddit-flair">${escapeHtml(p.link_flair_text)}</span>` : '';
-    return `
-    <a class="reddit-card" href="https://www.reddit.com${p.permalink}" target="_blank">
-      ${flair}
+  container.innerHTML = posts.map(p => `
+    <a class="reddit-card" href="${p.url}" target="_blank" rel="noopener">
       <div class="reddit-card-title">${escapeHtml(p.title)}</div>
       <div class="reddit-card-meta">
-        <span>▲ ${p.score.toLocaleString()}</span>
-        <span>💬 ${p.num_comments.toLocaleString()}</span>
-        <span>${age}</span>
+        <span>r/${escapeHtml(sub)}</span>
+        <span>${p.age}</span>
       </div>
-    </a>`;
-  }).join('');
+    </a>`).join('');
 }
 
 function timeAgo(utc) {
