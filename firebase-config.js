@@ -4,6 +4,7 @@ import {
   getAuth,
   signInWithPopup,
   signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged
@@ -33,6 +34,11 @@ const provider = new GoogleAuthProvider();
 let currentUser = null;
 let unsubscribeSnapshot = null;
 let onUserChanged = null;
+
+// Process redirect sign-in result on page load (non-blocking)
+getRedirectResult(auth).catch((error) => {
+  console.error('Redirect result error:', error);
+});
 
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
