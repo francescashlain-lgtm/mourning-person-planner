@@ -3,6 +3,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebas
 import {
   getAuth,
   signInWithPopup,
+  signInWithRedirect,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged
@@ -46,10 +47,18 @@ onAuthStateChanged(auth, async (user) => {
   if (onUserChanged) onUserChanged(user);
 });
 
+function isMobile() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
 export async function signInWithGoogle() {
   try {
-    const result = await signInWithPopup(auth, provider);
-    return result.user;
+    if (isMobile()) {
+      await signInWithRedirect(auth, provider);
+    } else {
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    }
   } catch (error) {
     console.error('Sign in error:', error);
     throw error;
